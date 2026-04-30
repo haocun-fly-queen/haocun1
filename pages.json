@@ -1,0 +1,75 @@
+{
+  "pages": [
+    {
+      "path": "pages/login/login",
+      "style": {
+        "navigationBarTitleText": "登录",
+        "navigationBarBackgroundColor": "#FF8C42",
+        "navigationBarTextStyle": "white"
+      }
+    },
+    {
+      "path": "pages/profile/profile",
+      "style": {
+        "navigationBarTitleText": "个人档案",
+        "navigationBarBackgroundColor": "#FF8C42",
+        "navigationBarTextStyle": "white"
+      }
+    },
+    {
+      "path": "pages/home/home",
+      "style": {
+        "navigationBarTitleText": "🐥 鸡仔健康",
+        "navigationBarBackgroundColor": "#FF8C42",
+        "navigationBarTextStyle": "white"
+      }
+    },
+    {
+      "path": "pages/camera/camera",
+      "style": {
+        "navigationBarTitleText": "拍照识别",
+        "navigationBarBackgroundColor": "#FF8C42",
+        "navigationBarTextStyle": "white"
+      }
+    },
+    {
+      "path": "pages/diet/diet",
+      "style": {
+        "navigationBarTitleText": "饮食记录",
+        "navigationBarBackgroundColor": "#FF8C42",
+        "navigationBarTextStyle": "white"
+      }
+    },
+    {
+      "path": "pages/dashboard/dashboard",
+      "style": {
+        "navigationBarTitleText": "数据看板",
+        "navigationBarBackgroundColor": "#FF8C42",
+        "navigationBarTextStyle": "white"
+      }
+    },
+    {
+      "path": "pages/plan/plan",
+      "style": {
+        "navigationBarTitleText": "饮食规划",
+        "navigationBarBackgroundColor": "#FF8C42",
+        "navigationBarTextStyle": "white"
+      }
+    },
+    {
+      "path": "pages/weight/weight",
+      "style": {
+        "navigationBarTitleText": "体重记录",
+        "navigationBarBackgroundColor": "#FF8C42",
+        "navigationBarTextStyle": "white"
+      }
+    }
+  ],
+  "globalStyle": {
+    "navigationBarTextStyle": "black",
+    "navigationBarTitleText": "鸡仔健康",
+    "navigationBarBackgroundColor": "#FF8C42",
+    "navigationBarTextStyle": "white",
+    "backgroundColor": "#FFF8F0"
+  }
+}
