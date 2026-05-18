@@ -1,0 +1,546 @@
+/* ========== 橙黄小鸡主题 - 全局样式 ========== */
+
+/* 主题色变量 */
+:root {
+  --chicken-orange: #FF8C42;
+  --chicken-orange-dark: #E86A33;
+  --chicken-orange-light: #FFB347;
+  --chicken-yellow: #FFD93D;
+  --chicken-yellow-light: #FFF3B0;
+  --chicken-bg: #FFF8F0;
+  --chicken-bg-warm: #FFF5E6;
+  --chicken-text: #5C4033;
+  --chicken-text-light: #8B6914;
+  --chicken-white: #FFFFFF;
+  --chicken-shadow: rgba(255, 140, 66, 0.15);
+  --chicken-shadow-strong: rgba(255, 140, 66, 0.25);
+}
+
+/* ========== 小鸡动画元素 ========== */
+
+/* 浮动小鸡容器 */
+.chicken-float {
+  position: fixed;
+  bottom: 120rpx;
+  right: 30rpx;
+  z-index: 999;
+  animation: chickenFloat 3s ease-in-out infinite;
+}
+
+@keyframes chickenFloat {
+  0%, 100% { transform: translateY(0) rotate(-3deg); }
+  50% { transform: translateY(-20rpx) rotate(3deg); }
+}
+
+/* 小鸡身体（CSS绘制） */
+.chicken-body-mini {
+  width: 80rpx;
+  height: 80rpx;
+  background: linear-gradient(135deg, #FFD93D 0%, #FFB347 100%);
+  border-radius: 50% 50% 45% 45%;
+  position: relative;
+  box-shadow: 0 4rpx 15rpx rgba(255, 140, 66, 0.3);
+}
+
+.chicken-body-mini::before {
+  content: '';
+  position: absolute;
+  top: -15rpx;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 0;
+  height: 0;
+  border-left: 10rpx solid transparent;
+  border-right: 10rpx solid transparent;
+  border-bottom: 20rpx solid #FF6B35;
+}
+
+.chicken-body-mini::after {
+  content: '';
+  position: absolute;
+  top: 22rpx;
+  left: 22rpx;
+  width: 10rpx;
+  height: 10rpx;
+  background: #333;
+  border-radius: 50%;
+  box-shadow: 26rpx 0 0 #333;
+  animation: chickenBlink 4s ease-in-out infinite;
+}
+
+@keyframes chickenBlink {
+  0%, 48%, 52%, 100% { transform: scaleY(1); }
+  50% { transform: scaleY(0.1); }
+}
+
+/* 小鸡翅膀 */
+.chicken-wing-left,
+.chicken-wing-right {
+  position: absolute;
+  width: 20rpx;
+  height: 25rpx;
+  background: #FFB347;
+  border-radius: 50%;
+  top: 35rpx;
+}
+
+.chicken-wing-left {
+  left: -8rpx;
+  transform: rotate(-20deg);
+  animation: wingFlapLeft 2s ease-in-out infinite;
+}
+
+.chicken-wing-right {
+  right: -8rpx;
+  transform: rotate(20deg);
+  animation: wingFlapRight 2s ease-in-out infinite;
+}
+
+@keyframes wingFlapLeft {
+  0%, 100% { transform: rotate(-20deg); }
+  50% { transform: rotate(-40deg); }
+}
+
+@keyframes wingFlapRight {
+  0%, 100% { transform: rotate(20deg); }
+  50% { transform: rotate(40deg); }
+}
+
+/* 小鸡嘴巴 */
+.chicken-beak {
+  position: absolute;
+  bottom: 25rpx;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 0;
+  height: 0;
+  border-left: 8rpx solid transparent;
+  border-right: 8rpx solid transparent;
+  border-top: 12rpx solid #FF6B35;
+}
+
+/* 小鸡脚 */
+.chicken-foot {
+  position: absolute;
+  bottom: -10rpx;
+  width: 6rpx;
+  height: 12rpx;
+  background: #FF8C42;
+  border-radius: 0 0 3rpx 3rpx;
+}
+
+.chicken-foot.left { left: 28rpx; }
+.chicken-foot.right { right: 28rpx; }
+
+/* ========== 空状态小鸡 ========== */
+.chicken-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 80rpx 40rpx;
+}
+
+.chicken-empty-body {
+  width: 160rpx;
+  height: 150rpx;
+  background: linear-gradient(135deg, #FFD93D 0%, #FFB347 100%);
+  border-radius: 50% 50% 45% 45%;
+  position: relative;
+  margin-bottom: 30rpx;
+  animation: chickenBounce 2s ease-in-out infinite;
+}
+
+@keyframes chickenBounce {
+  0%, 100% { transform: translateY(0) scale(1); }
+  50% { transform: translateY(-15rpx) scale(1.02); }
+}
+
+.chicken-empty-body::before {
+  /* 鸡冠 */
+  content: '';
+  position: absolute;
+  top: -25rpx;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 30rpx;
+  height: 30rpx;
+  background: #FF6B35;
+  border-radius: 50% 50% 30% 30%;
+  box-shadow: -12rpx 5rpx 0 -5rpx #FF6B35, 12rpx 5rpx 0 -5rpx #FF6B35;
+}
+
+.chicken-empty-body::after {
+  /* 眼睛 */
+  content: '';
+  position: absolute;
+  top: 45rpx;
+  left: 42rpx;
+  width: 16rpx;
+  height: 16rpx;
+  background: #333;
+  border-radius: 50%;
+  box-shadow: 60rpx 0 0 #333;
+  animation: chickenBlink 3s ease-in-out infinite;
+}
+
+.chicken-empty-beak {
+  position: absolute;
+  bottom: 45rpx;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 0;
+  height: 0;
+  border-left: 14rpx solid transparent;
+  border-right: 14rpx solid transparent;
+  border-top: 18rpx solid #FF6B35;
+}
+
+.chicken-empty-blush {
+  position: absolute;
+  top: 70rpx;
+  width: 20rpx;
+  height: 12rpx;
+  background: rgba(255, 107, 53, 0.3);
+  border-radius: 50%;
+}
+
+.chicken-empty-blush.left { left: 20rpx; }
+.chicken-empty-blush.right { right: 20rpx; }
+
+.chicken-empty-wing {
+  position: absolute;
+  top: 65rpx;
+  width: 30rpx;
+  height: 35rpx;
+  background: #FFB347;
+  border-radius: 50%;
+}
+
+.chicken-empty-wing.left {
+  left: -15rpx;
+  transform: rotate(-30deg);
+  animation: wingFlapLeft 2s ease-in-out infinite;
+}
+
+.chicken-empty-wing.right {
+  right: -15rpx;
+  transform: rotate(30deg);
+  animation: wingFlapRight 2s ease-in-out infinite;
+}
+
+/* ========== 通用动画 ========== */
+
+/* 页面入场 - 淡入上浮 */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30rpx);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* 页面入场 - 淡入缩放 */
+@keyframes fadeInScale {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* 卡片依次入场 */
+@keyframes slideInLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-30rpx);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* 脉冲动画 */
+@keyframes pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+}
+
+/* 摇摆动画 */
+@keyframes wiggle {
+  0%, 100% { transform: rotate(0deg); }
+  25% { transform: rotate(-5deg); }
+  75% { transform: rotate(5deg); }
+}
+
+/* 进度条流动 */
+@keyframes progressShine {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+/* 加载旋转 */
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* 星星闪烁 */
+@keyframes twinkle {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.5; transform: scale(0.8); }
+}
+
+/* ========== 通用主题类 ========== */
+
+/* 橙色渐变背景 */
+.bg-orange-gradient {
+  background: linear-gradient(135deg, #FF8C42 0%, #FFD93D 100%);
+}
+
+/* 深橙到浅橙 */
+.bg-orange-warm {
+  background: linear-gradient(135deg, #FF8C42 0%, #FFB347 100%);
+}
+
+/* 温暖背景 */
+.bg-warm {
+  background-color: #FFF8F0;
+}
+
+/* 橙色主按钮 */
+.btn-primary-orange {
+  background: linear-gradient(135deg, #FF8C42 0%, #E86A33 100%);
+  color: #FFFFFF;
+  border-radius: 44rpx;
+  box-shadow: 0 8rpx 24rpx rgba(255, 140, 66, 0.35);
+  transition: all 0.3s ease;
+}
+
+.btn-primary-orange:active {
+  transform: scale(0.97);
+  box-shadow: 0 4rpx 12rpx rgba(255, 140, 66, 0.25);
+}
+
+/* 黄色次按钮 */
+.btn-secondary-yellow {
+  background: linear-gradient(135deg, #FFD93D 0%, #FFB347 100%);
+  color: #5C4033;
+  border-radius: 44rpx;
+  box-shadow: 0 6rpx 20rpx rgba(255, 217, 61, 0.3);
+}
+
+/* 白色卡片 */
+.card-white {
+  background-color: #FFFFFF;
+  border-radius: 24rpx;
+  box-shadow: 0 4rpx 20rpx rgba(255, 140, 66, 0.08);
+}
+
+/* 橙色文字 */
+.text-orange {
+  color: #FF8C42;
+}
+
+.text-orange-dark {
+  color: #E86A33;
+}
+
+/* 动画延迟工具类 */
+.delay-1 { animation-delay: 0.1s; }
+.delay-2 { animation-delay: 0.2s; }
+.delay-3 { animation-delay: 0.3s; }
+.delay-4 { animation-delay: 0.4s; }
+.delay-5 { animation-delay: 0.5s; }
+
+/* ========== 加载动画 - 小鸡跑步 ========== */
+.chicken-loader {
+  width: 100rpx;
+  height: 100rpx;
+  position: relative;
+  margin: 0 auto;
+}
+
+.chicken-loader-body {
+  width: 60rpx;
+  height: 55rpx;
+  background: linear-gradient(135deg, #FFD93D 0%, #FFB347 100%);
+  border-radius: 50% 50% 45% 45%;
+  position: absolute;
+  top: 20rpx;
+  left: 20rpx;
+  animation: loaderBounce 0.6s ease-in-out infinite;
+}
+
+@keyframes loaderBounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-15rpx); }
+}
+
+.chicken-loader-body::before {
+  content: '';
+  position: absolute;
+  top: -10rpx;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 0;
+  height: 0;
+  border-left: 8rpx solid transparent;
+  border-right: 8rpx solid transparent;
+  border-bottom: 15rpx solid #FF6B35;
+}
+
+.chicken-loader-body::after {
+  content: '';
+  position: absolute;
+  top: 18rpx;
+  left: 15rpx;
+  width: 8rpx;
+  height: 8rpx;
+  background: #333;
+  border-radius: 50%;
+  box-shadow: 22rpx 0 0 #333;
+}
+
+/* 小鸡跑步尘土 */
+.dust-particle {
+  position: absolute;
+  bottom: 10rpx;
+  width: 8rpx;
+  height: 8rpx;
+  background: rgba(255, 140, 66, 0.3);
+  border-radius: 50%;
+  animation: dustFade 0.8s ease-out infinite;
+}
+
+.dust-particle:nth-child(2) { left: 10rpx; animation-delay: 0.1s; width: 6rpx; height: 6rpx; }
+.dust-particle:nth-child(3) { left: 25rpx; animation-delay: 0.2s; width: 10rpx; height: 10rpx; }
+.dust-particle:nth-child(4) { left: 45rpx; animation-delay: 0.3s; width: 5rpx; height: 5rpx; }
+
+@keyframes dustFade {
+  0% { opacity: 0.6; transform: translateX(0) scale(1); }
+  100% { opacity: 0; transform: translateX(-20rpx) scale(0.5); }
+}
+
+/* ========== 装饰元素 ========== */
+
+/* 小鸡爪印 */
+.footprint {
+  position: absolute;
+  width: 20rpx;
+  height: 16rpx;
+  background: rgba(255, 140, 66, 0.1);
+  border-radius: 50% 50% 40% 40%;
+}
+
+.footprint::before,
+.footprint::after {
+  content: '';
+  position: absolute;
+  width: 6rpx;
+  height: 10rpx;
+  background: rgba(255, 140, 66, 0.08);
+  border-radius: 50%;
+  top: -8rpx;
+}
+
+.footprint::before { left: 2rpx; transform: rotate(-15deg); }
+.footprint::after { right: 2rpx; transform: rotate(15deg); }
+
+/* 小鸡叫声气泡 */
+.chicken-speech {
+  position: relative;
+  background: linear-gradient(135deg, #FFF8F0 0%, #FFE5D0 100%);
+  border-radius: 24rpx;
+  padding: 20rpx 30rpx;
+  border: 2rpx solid rgba(255, 140, 66, 0.15);
+}
+
+.chicken-speech::after {
+  content: '';
+  position: absolute;
+  bottom: -16rpx;
+  left: 40rpx;
+  width: 0;
+  height: 0;
+  border-left: 12rpx solid transparent;
+  border-right: 12rpx solid transparent;
+  border-top: 18rpx solid #FFE5D0;
+}
+
+/* ========== 热量进度条动画 ========== */
+.progress-orange {
+  background: linear-gradient(90deg, #FF8C42 0%, #FFD93D 50%, #FF8C42 100%);
+  background-size: 200% 100%;
+  animation: progressShine 2s linear infinite;
+  border-radius: 10rpx;
+  transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ========== 顶部装饰区 ========== */
+.header-orange {
+  background: linear-gradient(135deg, #FF8C42 0%, #FFD93D 100%);
+  border-radius: 0 0 40rpx 40rpx;
+  position: relative;
+  overflow: hidden;
+}
+
+.header-orange::before {
+  content: '';
+  position: absolute;
+  top: -50rpx;
+  right: -50rpx;
+  width: 200rpx;
+  height: 200rpx;
+  background: radial-gradient(circle, rgba(255, 217, 61, 0.3) 0%, transparent 70%);
+  border-radius: 50%;
+}
+
+.header-orange::after {
+  content: '';
+  position: absolute;
+  bottom: 20rpx;
+  left: -30rpx;
+  width: 120rpx;
+  height: 120rpx;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.15) 0%, transparent 70%);
+  border-radius: 50%;
+}
+
+/* ========== 导航图标小鸡化 ========== */
+.nav-icon-orange {
+  background: linear-gradient(135deg, #FFE5D0 0%, #FFD93D 100%);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4rpx 12rpx rgba(255, 140, 66, 0.2);
+  transition: all 0.3s ease;
+}
+
+.nav-icon-orange:active {
+  transform: scale(0.92) rotate(-5deg);
+}
+
+/* ========== 标签小鸡黄 ========== */
+.tag-yellow {
+  background: linear-gradient(135deg, #FFF3B0 0%, #FFD93D 100%);
+  color: #8B6914;
+  padding: 6rpx 20rpx;
+  border-radius: 24rpx;
+  font-size: 22rpx;
+}
+
+.tag-orange {
+  background: linear-gradient(135deg, #FFE5D0 0%, #FFB347 100%);
+  color: #E86A33;
+  padding: 6rpx 20rpx;
+  border-radius: 24rpx;
+  font-size: 22rpx;
+}

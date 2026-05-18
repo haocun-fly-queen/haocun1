@@ -1,1001 +1,1284 @@
 <template>
   <view class="container">
-    <!-- 顶部 AI 助手区域 -->
-    <view class="ai-header">
-      <view class="ai-avatar">
-        <view class="ai-chicken">
-          <view class="ac-body"></view>
-          <view class="ac-eye ac-left"></view>
-          <view class="ac-eye ac-right"></view>
-          <view class="ac-beak"></view>
-          <view class="ac-hat">🎓</view>
+    <!-- ========== 骨架屏加载 ========== -->
+    <view v-if="loading" class="skeleton-wrap">
+      <view class="skel-header">
+        <view class="skel-circle"></view>
+        <view class="skel-lines">
+          <view class="skel-line w60"></view>
+          <view class="skel-line w40"></view>
         </view>
       </view>
-      <view class="ai-info">
-        <text class="ai-name">🐥 AI 饮食规划师</text>
-        <text class="ai-status">{{ aiStatus }}</text>
+      <view class="skel-card" v-for="i in 3" :key="i">
+        <view class="skel-line w80"></view>
+        <view class="skel-line w60"></view>
+        <view class="skel-bar"></view>
       </view>
     </view>
 
-    <!-- 今日热量概览 -->
-    <view class="calorie-overview card">
-      <view class="overview-title">📊 今日热量进度</view>
-      <view class="calorie-ring">
-        <view class="ring-bg">
-          <view class="ring-fill" :style="{ 
-            background: `conic-gradient(#FF8C42 ${progressPercent}%, #FFE5D0 ${progressPercent}%)` 
-          }">
-            <view class="ring-inner">
-              <text class="ring-value">{{ remainingCalories }}</text>
-              <text class="ring-label">剩余 kcal</text>
+    <!-- ========== 正式内容 ========== -->
+    <view v-else class="content-wrap">
+
+      <!-- 顶部问候 + 小鸡 -->
+      <view class="dash-header">
+        <view class="dh-left">
+          <view class="dh-chicken">
+            <view class="dc-body"></view>
+            <view class="dc-eye dc-l"></view>
+            <view class="dc-eye dc-r"></view>
+            <view class="dc-beak"></view>
+            <view class="dc-wing"></view>
+          </view>
+        </view>
+        <view class="dh-right">
+          <text class="dh-greeting">{{ greeting }}</text>
+          <text class="dh-date">{{ todayStr }}</text>
+        </view>
+      </view>
+
+      <!-- 异常提醒 -->
+      <view v-if="alerts.length > 0" class="alert-banner"
+            :class="'alert-' + alerts[0].level"
+            @click="showAlertModal = true">
+        <view class="alert-icon">
+          <text v-if="alerts[0].level === 'danger'">⚠️</text>
+          <text v-else>💡</text>
+        </view>
+        <view class="alert-content">
+          <text class="alert-title">{{ alerts[0].title }}</text>
+          <text class="alert-msg">{{ alerts[0].message }}</text>
+        </view>
+        <text class="alert-arrow">›</text>
+      </view>
+
+      <!-- ===== 模块1：每日摄入概览 ===== -->
+      <view class="section-card intake-card animate-in">
+        <view class="intake-ring-wrap">
+          <view class="intake-ring">
+            <view class="ir-bg"></view>
+            <view class="ir-fill" :style="ringStyle"></view>
+            <view class="ir-cover">
+              <text class="ir-value">{{ animatedCalories }}</text>
+              <text class="ir-label">剩余 kcal</text>
+            </view>
+          </view>
+          <view class="intake-arc-labels">
+            <view class="arc-label top">
+              <text class="arc-num">{{ todaySummary.consumedCalories }}</text>
+              <text class="arc-txt">已摄入</text>
+            </view>
+            <view class="arc-label bottom">
+              <text class="arc-num">{{ todaySummary.targetCalories }}</text>
+              <text class="arc-txt">目标</text>
             </view>
           </view>
         </view>
-      </view>
-      <view class="calorie-detail">
-        <view class="detail-item">
-          <text class="detail-num">{{ targetCalories }}</text>
-          <text class="detail-label">目标</text>
-        </view>
-        <view class="detail-item">
-          <text class="detail-num">{{ consumedCalories }}</text>
-          <text class="detail-label">已摄入</text>
-        </view>
-        <view class="detail-item">
-          <text class="detail-num">{{ remainingCalories }}</text>
-          <text class="detail-label">剩余</text>
-        </view>
-      </view>
-    </view>
 
-    <!-- 已记录餐次 -->
-    <view class="recorded-meals card" v-if="todayMeals.length > 0">
-      <view class="card-title">📝 今日已记录</view>
-      <view v-for="(meal, index) in todayMeals" :key="index" class="meal-record">
-        <view class="meal-badge" :class="'type-' + meal.type">{{ meal.typeName }}</view>
-        <view class="meal-info">
-          <text class="meal-foods">{{ meal.foods || '未记录食物' }}</text>
-          <text class="meal-cal">{{ meal.calories || 0 }} kcal</text>
+        <!-- 今日餐次列表 -->
+        <view class="intake-meals" v-if="todaySummary.meals && todaySummary.meals.length > 0">
+          <view v-for="(m, i) in todaySummary.meals" :key="i" class="im-row">
+            <view class="im-badge" :class="'type-' + m.type">{{ m.typeName }}</view>
+            <text class="im-foods">{{ m.foods }}</text>
+            <text class="im-cal">{{ m.calories }}kcal</text>
+          </view>
         </view>
-      </view>
-    </view>
-
-    <!-- AI 生成按钮 -->
-    <view class="generate-section" v-if="!currentPlan">
-      <view class="generate-hint">
-        <text class="hint-icon">💡</text>
-        <text class="hint-text">{{ generateHint }}</text>
-      </view>
-      <button class="generate-btn" @click="generateAIPlan" :disabled="isGenerating">
-        <text v-if="!isGenerating">🤖 AI 生成下一餐建议</text>
-        <view v-else class="btn-loader">
-          <view class="bl-dot"></view>
-          <view class="bl-dot"></view>
-          <view class="bl-dot"></view>
+        <view v-else class="intake-empty">
+          <text class="ie-text">今天还没有记录哦，开始记录第一餐吧！</text>
         </view>
-      </button>
-    </view>
 
-    <!-- AI 规划结果 -->
-    <view class="ai-plan card" v-if="currentPlan && currentPlan.foods">
-      <view class="plan-header">
-        <view class="plan-badge">{{ currentPlan.mealType || '建议' }}</view>
-        <text class="plan-cal">{{ currentPlan.totalCalories || 0 }} kcal</text>
-      </view>
-      
-      <view class="plan-foods">
-        <view v-for="(food, idx) in currentPlan.foods" :key="idx" class="food-item">
-          <image class="food-img" :src="food.image || '/static/haocun.jpg'" mode="aspectFill"></image>
-          <view class="food-info">
-            <text class="food-name">{{ food.name || '未知食物' }}</text>
-            <text class="food-amount">{{ food.amount || '适量' }}</text>
-            <text class="food-cal">{{ food.calories || 0 }} kcal</text>
+        <!-- 快捷记录按钮 -->
+        <view class="quick-actions">
+          <view class="qa-btn" @click="goTo('/pages/camera/camera')">
+            <view class="qa-icon camera-icon">📷</view>
+            <text class="qa-label">拍照记录</text>
+          </view>
+          <view class="qa-btn" @click="goTo('/pages/diet/diet')">
+            <view class="qa-icon manual-icon">📝</view>
+            <text class="qa-label">手动记录</text>
+          </view>
+          <view class="qa-btn" @click="goTo('/pages/plan/plan')">
+            <view class="qa-icon ai-icon">🤖</view>
+            <text class="qa-label">AI 规划</text>
           </view>
         </view>
       </view>
 
-      <view class="plan-nutrition" v-if="currentPlan.nutrition">
-        <view class="nutrition-item">
-          <view class="nutrition-bar carbs" :style="{ width: (currentPlan.nutrition.carbs || 0) + '%' }"></view>
-          <text>碳水 {{ currentPlan.nutrition.carbs || 0 }}%</text>
+      <!-- ===== 模块2：营养均衡分析 ===== -->
+      <view class="section-card animate-in delay-1">
+        <view class="section-title">
+          <text class="st-text">📊 营养均衡分析</text>
+          <text class="st-sub">{{ nutritionStandard.description }}</text>
         </view>
-        <view class="nutrition-item">
-          <view class="nutrition-bar protein" :style="{ width: (currentPlan.nutrition.protein || 0) + '%' }"></view>
-          <text>蛋白质 {{ currentPlan.nutrition.protein || 0 }}%</text>
+
+        <!-- 今日宏量营养素饼图 -->
+        <view class="macro-chart-wrap">
+          <view class="macro-pie" :style="pieStyle">
+            <view class="pie-inner">
+              <text class="pie-label">今日</text>
+              <text class="pie-cal">{{ todaySummary.consumedCalories }}</text>
+              <text class="pie-unit">kcal</text>
+            </view>
+          </view>
+          <view class="macro-legend">
+            <view class="ml-item">
+              <view class="ml-dot carbs"></view>
+              <text class="ml-name">碳水</text>
+              <text class="ml-val">{{ macros.carbs.actual }}g / {{ macros.carbs.target }}g</text>
+            </view>
+            <view class="ml-item">
+              <view class="ml-dot protein"></view>
+              <text class="ml-name">蛋白质</text>
+              <text class="ml-val">{{ macros.protein.actual }}g / {{ macros.protein.target }}g</text>
+            </view>
+            <view class="ml-item">
+              <view class="ml-dot fat"></view>
+              <text class="ml-name">脂肪</text>
+              <text class="ml-val">{{ macros.fat.actual }}g / {{ macros.fat.target }}g</text>
+            </view>
+          </view>
         </view>
-        <view class="nutrition-item">
-          <view class="nutrition-bar fat" :style="{ width: (currentPlan.nutrition.fat || 0) + '%' }"></view>
-          <text>脂肪 {{ currentPlan.nutrition.fat || 0 }}%</text>
+
+        <!-- 实际 vs 推荐对比条 -->
+        <view class="compare-bars">
+          <view class="cb-row" v-for="(item, key) in compareItems" :key="key">
+            <text class="cb-name">{{ item.name }}</text>
+            <view class="cb-track">
+              <view class="cb-target-bar" :style="{ width: '100%' }"></view>
+              <view class="cb-actual-bar" :style="{ width: item.percent + '%', background: item.color }"></view>
+            </view>
+            <text class="cb-pct" :class="{ 'over': item.percent > 110 }">
+              {{ Math.round(item.percent) }}%
+            </text>
+          </view>
         </view>
       </view>
 
-      <view class="plan-reason" v-if="currentPlan.reason">
-        <text class="reason-title">🎯 推荐理由</text>
-        <text class="reason-text">{{ currentPlan.reason }}</text>
+      <!-- ===== 模块3：周期数据统计 ===== -->
+      <view class="section-card animate-in delay-2">
+        <view class="section-title">
+          <text class="st-text">📈 数据统计</text>
+        </view>
+
+        <!-- Tab 切换 -->
+        <view class="period-tabs">
+          <view class="pt-btn" :class="{ active: activeTab === 'week' }" @click="activeTab = 'week'">本周</view>
+          <view class="pt-btn" :class="{ active: activeTab === 'month' }" @click="activeTab = 'month'">本月</view>
+        </view>
+
+        <!-- 每日热量柱状图 -->
+        <view class="bar-chart">
+          <view class="bc-row" v-for="(d, i) in currentPeriod.dailyCalories" :key="i">
+            <text class="bc-date">{{ d.date }}</text>
+            <view class="bc-track">
+              <view class="bc-target-line" :style="{ left: '100%' }"></view>
+              <view class="bc-bar" :style="{
+                width: barWidth(d.calories, d.target) + '%',
+                background: d.calories > d.target ? '#f44336' : 'linear-gradient(90deg, #FF8C42, #FFD93D)'
+              }"></view>
+            </view>
+            <text class="bc-val" :class="{ 'over': d.calories > d.target }">{{ d.calories }}</text>
+          </view>
+        </view>
+
+        <!-- 统计指标卡片 -->
+        <view class="stat-cards">
+          <view class="sc-item">
+            <text class="sc-num">{{ currentPeriod.avgCalories }}</text>
+            <text class="sc-label">日均热量 kcal</text>
+          </view>
+          <view class="sc-item">
+            <text class="sc-num">{{ Math.round(currentPeriod.mealRegularRate * 100) }}%</text>
+            <text class="sc-label">用餐规律率</text>
+          </view>
+          <view class="sc-item">
+            <text class="sc-num">{{ currentPeriod.calorieFluctuation }}</text>
+            <text class="sc-label">热量波动值</text>
+          </view>
+          <view class="sc-item">
+            <text class="sc-num">{{ currentPeriod.foodDiversityScore }}</text>
+            <text class="sc-label">食物多样性</text>
+          </view>
+        </view>
+
+        <!-- 体重趋势 -->
+        <view class="weight-trend" v-if="currentPeriod.weightTrend && currentPeriod.weightTrend.length > 1">
+          <text class="wt-title">⚖️ 体重变化趋势</text>
+          <view class="wt-chart">
+            <view class="wt-line">
+              <view
+                v-for="(p, i) in currentPeriod.weightTrend"
+                :key="i"
+                class="wt-dot"
+                :style="dotStyle(p, i)"
+              >
+                <view class="wt-tooltip">
+                  <text>{{ p.date }}</text>
+                  <text>{{ p.weight }}kg</text>
+                </view>
+              </view>
+            </view>
+          </view>
+          <view class="wt-range">
+            <text>{{ currentPeriod.weightTrend[0].date }}</text>
+            <text>{{ currentPeriod.weightTrend[currentPeriod.weightTrend.length - 1].date }}</text>
+          </view>
+        </view>
       </view>
 
-      <view class="plan-actions">
-        <button class="action-btn secondary" @click="regeneratePlan">🔄 重新生成</button>
-        <button class="action-btn primary" @click="recordPlan">✅ 按此方案记录</button>
-      </view>
-    </view>
-
-    <!-- 历史规划记录 -->
-    <view class="history-plans card" v-if="planHistory.length > 0">
-      <view class="card-title">📚 今日规划记录</view>
-      <view v-for="(plan, idx) in planHistory" :key="idx" class="history-item">
-        <view class="history-meal">{{ plan.mealType || '未知' }}</view>
-        <text class="history-foods">{{ getPlanFoodsText(plan) }}</text>
-        <text class="history-cal">{{ plan.totalCalories || 0 }} kcal</text>
+      <!-- ===== 模块4：异常提醒弹窗 ===== -->
+      <view class="modal-mask" v-if="showAlertModal" @click="showAlertModal = false">
+        <view class="modal-box" @click.stop>
+          <view class="modal-header">
+            <text class="modal-title">⚠️ 异常提醒</text>
+            <text class="modal-close" @click="showAlertModal = false">✕</text>
+          </view>
+          <scroll-view scroll-y class="modal-body">
+            <view v-for="(alert, i) in alerts" :key="i" class="alert-card" :class="'ac-' + alert.level">
+              <text class="ac-title">{{ alert.title }}</text>
+              <text class="ac-msg">{{ alert.message }}</text>
+              <view class="ac-suggestion">
+                <text class="ac-sug-label">💡 建议：</text>
+                <text class="ac-sug-text">{{ alert.suggestion }}</text>
+              </view>
+            </view>
+            <view v-if="alerts.length === 0" class="no-alert">
+              <text class="na-icon">🎉</text>
+              <text class="na-text">太棒了！暂无异常提醒</text>
+            </view>
+          </scroll-view>
+        </view>
       </view>
     </view>
   </view>
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import request from '../../utils/request'
 import { API } from '../../config'
 
 const userId = ref(null)
-const userProfile = ref(null)
-const todayMeals = ref([])
-const targetCalories = ref(2000)
-const consumedCalories = ref(0)
-const remainingCalories = ref(2000)
-const isGenerating = ref(false)
-const currentPlan = ref(null)
-const planHistory = ref([])
-const aiStatus = ref('准备为您规划下一餐...')
-const progressPercent = ref(0)
-const generateHint = ref('点击按钮生成饮食建议')
+const loading = ref(true)
+const activeTab = ref('week')
+const showAlertModal = ref(false)
 
-// 页面加载
+const todaySummary = ref({
+  targetCalories: 2000,
+  consumedCalories: 0,
+  remainingCalories: 2000,
+  progressPercent: 0,
+  meals: [],
+  macros: {
+    carbs: { actual: 0, target: 0, unit: 'g' },
+    protein: { actual: 0, target: 0, unit: 'g' },
+    fat: { actual: 0, target: 0, unit: 'g' }
+  }
+})
+
+const nutritionStandard = ref({
+  calories: 2000, carbsPercent: 50, proteinPercent: 20, fatPercent: 30,
+  carbsGram: 0, proteinGram: 0, fatGram: 0, description: ''
+})
+
+const weeklyStats = ref({
+  dailyCalories: [], avgCalories: 0, mealRegularRate: 0,
+  foodDiversityScore: 0, calorieFluctuation: 0, weightTrend: []
+})
+
+const monthlyStats = ref({
+  dailyCalories: [], avgCalories: 0, mealRegularRate: 0,
+  foodDiversityScore: 0, calorieFluctuation: 0, weightTrend: []
+})
+
+const alerts = ref([])
+
+// 动画相关
+const animatedCalories = ref(0)
+const ringPercent = ref(0)
+
+// ========== 计算属性 ==========
+
+const todayStr = computed(() => {
+  const d = new Date()
+  return `${d.getMonth() + 1}月${d.getDate()}日 ${['日','一','二','三','四','五','六'][d.getDay()]}`
+})
+
+const greeting = computed(() => {
+  const h = new Date().getHours()
+  if (h < 6) return '夜深了，早点休息 🌙'
+  if (h < 11) return '早上好！记得吃早餐 ☀️'
+  if (h < 14) return '中午好！午餐时间 🍚'
+  if (h < 18) return '下午好！补充能量 💪'
+  return '晚上好！晚餐别太晚 🌆'
+})
+
+const macros = computed(() => todaySummary.value.macros)
+
+const ringStyle = computed(() => {
+  const deg = (ringPercent.value / 100) * 360
+  return {
+    background: `conic-gradient(#FF8C42 ${deg}deg, #FFE5D0 ${deg}deg)`
+  }
+})
+
+const pieStyle = computed(() => {
+  const m = macros.value
+  const total = (m.carbs.actual || 0) + (m.protein.actual || 0) + (m.fat.actual || 0)
+  if (total === 0) return { background: '#FFE5D0' }
+  const cPct = (m.carbs.actual / total * 100)
+  const pPct = (m.protein.actual / total * 100)
+  return {
+    background: `conic-gradient(#FF9800 0% ${cPct}%, #4CAF50 ${cPct}% ${cPct + pPct}%, #f44336 ${cPct + pPct}% 100%)`
+  }
+})
+
+const compareItems = computed(() => {
+  const m = macros.value
+  const items = []
+  if (m.carbs.target > 0) {
+    items.push({ name: '碳水', percent: m.carbs.actual / m.carbs.target * 100, color: '#FF9800' })
+  }
+  if (m.protein.target > 0) {
+    items.push({ name: '蛋白质', percent: m.protein.actual / m.protein.target * 100, color: '#4CAF50' })
+  }
+  if (m.fat.target > 0) {
+    items.push({ name: '脂肪', percent: m.fat.actual / m.fat.target * 100, color: '#f44336' })
+  }
+  return items
+})
+
+const currentPeriod = computed(() => {
+  return activeTab.value === 'week' ? weeklyStats.value : monthlyStats.value
+})
+
+// ========== 方法 ==========
+
+const barWidth = (cal, target) => {
+  if (!target || target === 0) return 0
+  return Math.min(100, cal / target * 100)
+}
+
+const dotStyle = (point, index) => {
+  const trend = currentPeriod.value.weightTrend
+  if (!trend || trend.length < 2) return {}
+  const weights = trend.map(p => p.weight)
+  const min = Math.min(...weights) - 1
+  const max = Math.max(...weights) + 1
+  const range = max - min || 1
+  const left = index / (trend.length - 1) * 100
+  const bottom = (point.weight - min) / range * 100
+  return {
+    left: left + '%',
+    bottom: bottom + '%'
+  }
+}
+
+const goTo = (url) => {
+  uni.navigateTo({ url })
+}
+
+// 数字滚动动画
+const animateNumber = (from, to, duration, callback) => {
+  const start = Date.now()
+  const diff = to - from
+  const step = () => {
+    const elapsed = Date.now() - start
+    const progress = Math.min(elapsed / duration, 1)
+    const eased = 1 - Math.pow(1 - progress, 3) // easeOutCubic
+    callback(Math.round(from + diff * eased))
+    if (progress < 1) {
+      setTimeout(step, 16)
+    }
+  }
+  step()
+}
+
+// 加载数据
+const loadDashboard = async () => {
+  loading.value = true
+  try {
+    const res = await request({
+      url: API.DASHBOARD_OVERVIEW,
+      method: 'GET',
+      data: { userId: userId.value }
+    })
+
+    if (res.code === 200 && res.data) {
+      const data = res.data
+      todaySummary.value = data.todaySummary || todaySummary.value
+      nutritionStandard.value = data.nutritionStandard || nutritionStandard.value
+      weeklyStats.value = data.weeklyStats || weeklyStats.value
+      monthlyStats.value = data.monthlyStats || monthlyStats.value
+      alerts.value = data.alerts || []
+
+      // 动画：热量数字滚动
+      loading.value = false
+
+      setTimeout(() => {
+        animateNumber(0, todaySummary.value.remainingCalories, 1200, (val) => {
+          animatedCalories.value = val
+        })
+        animateNumber(0, todaySummary.value.progressPercent, 1000, (val) => {
+          ringPercent.value = val
+        })
+      }, 300)
+    }
+  } catch (err) {
+    console.error('加载看板数据失败', err)
+    loading.value = false
+  }
+}
+
 onMounted(() => {
   userId.value = uni.getStorageSync('userId')
   if (!userId.value) {
     uni.showToast({ title: '请先登录', icon: 'none' })
-    setTimeout(() => {
-      uni.reLaunch({ url: '/pages/login/login' })
-    }, 1500)
+    setTimeout(() => uni.reLaunch({ url: '/pages/login/login' }), 1500)
     return
   }
-  
-  loadUserProfile()
-  loadTodayMeals()
-  loadCalorieGoal()
+  loadDashboard()
 })
 
-// 获取用户档案
-const loadUserProfile = () => {
-  try {
-    const profile = uni.getStorageSync('userProfile') || {}
-    const userInfo = uni.getStorageSync('userInfo') || {}
-    
-    userProfile.value = {
-      nickname: profile.nickname || userInfo.nickname || '用户',
-      gender: profile.gender || 1,
-      age: profile.age || 25,
-      height: profile.height || 170,
-      weight: profile.weight || 65,
-      targetWeight: profile.targetWeight || 60,
-      activityLevel: profile.activityLevel || 1,
-      goalType: profile.goalType || 1,
-      dietPreference: profile.dietPreference || 'none',
-      tabooDetail: profile.tabooDetail || '',
-      allergies: profile.allergies || ''
-    }
-  } catch (e) {
-    console.error('加载用户档案失败', e)
-    userProfile.value = {
-      nickname: '用户', gender: 1, age: 25, height: 170, weight: 65,
-      targetWeight: 60, activityLevel: 1, goalType: 1,
-      dietPreference: 'none', tabooDetail: '', allergies: ''
-    }
-  }
-}
-
-// 获取热量目标
-const loadCalorieGoal = async () => {
-  try {
-    const url = API.USER_CALORIE_GOAL.replace('{userId}', userId.value)
-    const res = await request({ url, method: 'GET' })
-    if (res.code === 200 && res.data) {
-      targetCalories.value = res.data
-    } else {
-      calculateLocalGoal()
-    }
-  } catch (err) {
-    console.error('获取热量目标失败', err)
-    calculateLocalGoal()
-  }
-  updateCalorieStatus()
-}
-
-// 本地计算热量目标（备用）
-const calculateLocalGoal = () => {
-  const p = userProfile.value
-  if (!p) return
-  
-  const bmr = 10 * p.weight + 6.25 * p.height - 5 * p.age
-  const baseCalories = p.gender === 1 ? bmr + 5 : bmr - 161
-  
-  const activityMultipliers = [1.2, 1.375, 1.55, 1.725, 1.9]
-  const multiplier = activityMultipliers[p.activityLevel - 1] || 1.2
-  let target = Math.round(baseCalories * multiplier)
-  
-  if (p.goalType === 1) target = Math.round(target * 0.8)
-  if (p.goalType === 2) target = Math.round(target * 1.1)
-  
-  targetCalories.value = target
-}
-
-// 获取今日饮食记录
-const loadTodayMeals = async () => {
-  try {
-    const today = new Date().toISOString().split('T')[0]
-    const res = await request({
-      url: API.DIET_TODAY,
-      method: 'GET',
-      data: { userId: userId.value, date: today }
-    })
-    
-    if (res.code === 200 && res.data) {
-      todayMeals.value = res.data.meals || []
-      consumedCalories.value = res.data.totalCalories || 0
-    } else {
-      loadLocalMeals()
-    }
-  } catch (err) {
-    console.error('获取今日饮食失败', err)
-    loadLocalMeals()
-  }
-  updateCalorieStatus()
-}
-
-// 从本地获取（备用）
-const loadLocalMeals = () => {
-  try {
-    const today = new Date().toDateString()
-    const meals = uni.getStorageSync(`meals_${today}`) || []
-    todayMeals.value = meals
-    consumedCalories.value = meals.reduce((sum, m) => sum + (m.calories || 0), 0)
-  } catch (e) {
-    todayMeals.value = []
-    consumedCalories.value = 0
-  }
-}
-
-// 更新热量状态
-const updateCalorieStatus = () => {
-  remainingCalories.value = targetCalories.value - consumedCalories.value
-  
-  const percent = targetCalories.value > 0 
-    ? Math.min(100, (consumedCalories.value / targetCalories.value) * 100) 
-    : 0
-  progressPercent.value = percent
-  
-  if (consumedCalories.value === 0) {
-    aiStatus.value = '今天还没有记录，让我来规划您的第一餐吧！'
-    generateHint.value = '今天还没有记录哦！让 AI 帮您规划早餐吧'
-  } else if (remainingCalories.value < 0) {
-    aiStatus.value = `已超标 ${Math.abs(remainingCalories.value)} kcal`
-    generateHint.value = `今日热量已超标 ${Math.abs(remainingCalories.value)} kcal，AI 将推荐低卡方案`
-  } else if (remainingCalories.value < 300) {
-    aiStatus.value = `仅剩 ${remainingCalories.value} kcal`
-    generateHint.value = `今日仅剩 ${remainingCalories.value} kcal，AI 推荐轻食方案`
-  } else {
-    aiStatus.value = `已摄入 ${consumedCalories.value} kcal，剩余 ${remainingCalories.value} kcal`
-    const recordedTypes = todayMeals.value.map(m => m.typeName).join('、')
-    generateHint.value = `已记录 ${recordedTypes}，让 AI 规划下一餐（剩余 ${remainingCalories.value} kcal）`
-  }
-}
-
-// ========== 核心：调用 AI 生成饮食方案 ==========
-const generateAIPlan = async () => {
-  if (isGenerating.value) return
-  
-  isGenerating.value = true
-  aiStatus.value = 'AI 正在分析您的饮食数据...'
-  
-  try {
-    const aiParams = buildAIParams()
-    
-    const res = await request({
-      url: API.AI_DIET_PLAN,
-      method: 'POST',
-      data: aiParams,
-      timeout: 15000
-    })
-    
-    if (res.code === 200 && res.data) {
-      currentPlan.value = res.data
-      aiStatus.value = `已为您生成${res.data.mealType}方案！`
-    } else {
-      throw new Error(res.message || 'AI 生成失败')
-    }
-  } catch (err) {
-    console.error('AI 生成失败', err)
-    aiStatus.value = 'AI 服务繁忙，使用本地智能推荐...'
-    generateLocalPlan()
-  } finally {
-    isGenerating.value = false
-  }
-}
-
-// 构建 AI 请求参数
-const buildAIParams = () => {
-  const p = userProfile.value || {}
-  const nextMeal = getNextMealType()
-  
-  return {
-    userId: userId.value,
-    profile: {
-      gender: p.gender || 1,
-      age: p.age || 25,
-      height: p.height || 170,
-      weight: p.weight || 65,
-      targetWeight: p.targetWeight || 60,
-      activityLevel: p.activityLevel || 1,
-      goalType: p.goalType || 1,
-      bmr: calculateBMR()
-    },
-    restrictions: {
-      dietPreference: p.dietPreference || 'none',
-      tabooDetail: p.tabooDetail || '',
-      allergies: p.allergies ? p.allergies.split(/[,，、]/) : []
-    },
-    calorieStatus: {
-      target: targetCalories.value,
-      consumed: consumedCalories.value,
-      remaining: remainingCalories.value,
-      progressPercent: progressPercent.value
-    },
-    recordedMeals: todayMeals.value.map(m => ({
-      type: m.type,
-      typeName: m.typeName,
-      foods: m.foods,
-      calories: m.calories,
-      nutrition: m.nutrition
-    })),
-    targetMeal: nextMeal
-  }
-}
-
-// 计算基础代谢率
-const calculateBMR = () => {
-  const p = userProfile.value
-  if (!p) return 1500
-  const bmr = 10 * (p.weight || 65) + 6.25 * (p.height || 170) - 5 * (p.age || 25)
-  return (p.gender || 1) === 1 ? bmr + 5 : bmr - 161
-}
-
-// 判断下一餐是什么
-const getNextMealType = () => {
-  const mealOrder = [
-    { type: 1, name: '早餐' },
-    { type: 2, name: '午餐' },
-    { type: 3, name: '晚餐' },
-    { type: 4, name: '加餐' }
-  ]
-  
-  const recordedTypes = todayMeals.value.map(m => m.type)
-  for (const meal of mealOrder) {
-    if (!recordedTypes.includes(meal.type)) {
-      return { type: meal.type, name: meal.name }
-    }
-  }
-  
-  return { type: 4, name: '加餐' }
-}
-
-// 本地智能推荐（AI 失败时的降级方案）
-const generateLocalPlan = () => {
-  const nextMeal = getNextMealType()
-  const remaining = remainingCalories.value
-  const p = userProfile.value || {}
-  
-  let suggestCalories = 0
-  const mealRatios = { '早餐': 0.3, '午餐': 0.4, '晚餐': 0.25, '加餐': 0.05 }
-  const ratio = mealRatios[nextMeal.name] || 0.25
-  
-  if (remaining > 0) {
-    const remainingRatio = 1 - (progressPercent.value / 100)
-    suggestCalories = remainingRatio > 0 ? Math.round(remaining * (ratio / remainingRatio)) : 200
-  } else {
-    suggestCalories = 200
-  }
-  
-  const foodDatabase = getFilteredFoods(p)
-  
-  const staple = pickFood(foodDatabase.staples, suggestCalories * 0.5)
-  const protein = pickFood(foodDatabase.proteins, suggestCalories * 0.3)
-  const veg = pickFood(foodDatabase.vegetables, suggestCalories * 0.2)
-  
-  currentPlan.value = {
-    mealType: nextMeal.name,
-    totalCalories: (staple?.calories || 0) + (protein?.calories || 0) + (veg?.calories || 0),
-    foods: [
-      { name: staple?.name || '主食', amount: staple?.amount || '适量', calories: staple?.calories || 0, image: staple?.image || '' },
-      { name: protein?.name || '蛋白质', amount: protein?.amount || '适量', calories: protein?.calories || 0, image: protein?.image || '' },
-      { name: veg?.name || '蔬菜', amount: veg?.amount || '适量', calories: veg?.calories || 0, image: veg?.image || '' }
-    ],
-    nutrition: { carbs: 50, protein: 25, fat: 25 },
-    reason: `基于您的${p.goalType === 1 ? '减脂' : p.goalType === 2 ? '增肌' : '保持'}目标，今日剩余 ${remaining} kcal，${nextMeal.name}建议摄入约 ${suggestCalories} kcal。`
-  }
-}
-
-// 根据偏好过滤食物
-const getFilteredFoods = (profile) => {
-  const allFoods = {
-    staples: [
-      { name: '全麦面包', calories: 120, amount: '2片', tags: ['vegetarian', 'halal'] },
-      { name: '糙米饭', calories: 150, amount: '1碗', tags: ['vegetarian', 'halal'] },
-      { name: '燕麦粥', calories: 100, amount: '1碗', tags: ['vegetarian', 'halal'] },
-      { name: '红薯', calories: 90, amount: '1个', tags: ['vegetarian', 'halal'] },
-      { name: '藜麦饭', calories: 130, amount: '1碗', tags: ['vegetarian', 'halal'] }
-    ],
-    proteins: [
-      { name: '水煮蛋', calories: 70, amount: '1个', tags: ['vegetarian', 'halal'] },
-      { name: '鸡胸肉', calories: 120, amount: '100g', tags: ['halal'] },
-      { name: '豆腐', calories: 80, amount: '150g', tags: ['vegetarian', 'halal'] },
-      { name: '三文鱼', calories: 150, amount: '100g', tags: ['halal'] },
-      { name: '牛肉', calories: 130, amount: '100g', tags: ['halal'] }
-    ],
-    vegetables: [
-      { name: '西兰花', calories: 35, amount: '150g', tags: ['vegetarian', 'halal'] },
-      { name: '菠菜', calories: 25, amount: '150g', tags: ['vegetarian', 'halal'] },
-      { name: '胡萝卜', calories: 30, amount: '100g', tags: ['vegetarian', 'halal'] },
-      { name: '黄瓜', calories: 15, amount: '1根', tags: ['vegetarian', 'halal'] },
-      { name: '番茄', calories: 20, amount: '1个', tags: ['vegetarian', 'halal'] }
-    ]
-  }
-  
-  const preference = profile.dietPreference || 'none'
-  if (preference === 'none') return allFoods
-  
-  const filterByPreference = (foods) => {
-    if (preference === 'vegetarian') {
-      return foods.filter(f => f.tags.includes('vegetarian'))
-    }
-    if (preference === 'halal') {
-      return foods.filter(f => f.tags.includes('halal'))
-    }
-    if (preference === 'taboo' && profile.tabooDetail) {
-      const taboos = profile.tabooDetail.split(/[,，、]/)
-      return foods.filter(f => !taboos.some(t => f.name.includes(t)))
-    }
-    return foods
-  }
-  
-  return {
-    staples: filterByPreference(allFoods.staples),
-    proteins: filterByPreference(allFoods.proteins),
-    vegetables: filterByPreference(allFoods.vegetables)
-  }
-}
-
-// 从列表中挑选食物
-const pickFood = (foods, targetCalories) => {
-  if (!foods || foods.length === 0) {
-    return { name: '蔬菜沙拉', calories: 50, amount: '1份' }
-  }
-  const sorted = [...foods].sort((a, b) => 
-    Math.abs((a.calories || 0) - targetCalories) - Math.abs((b.calories || 0) - targetCalories)
-  )
-  return sorted[0]
-}
-
-// 重新生成
-const regeneratePlan = () => {
-  currentPlan.value = null
-  generateAIPlan()
-}
-
-// 按方案记录
-const recordPlan = () => {
-  if (!currentPlan.value) return
-  
-  const plan = currentPlan.value
-  const nextMeal = getNextMealType()
-  
-  const mealData = {
-    userId: userId.value,
-    type: nextMeal.type,
-    typeName: plan.mealType || nextMeal.name,
-    foods: (plan.foods || []).map(f => `${f.name || ''}${f.amount || ''}`).join('、'),
-    calories: plan.totalCalories || 0,
-    nutrition: plan.nutrition || { carbs: 0, protein: 0, fat: 0 },
-    date: new Date().toISOString().split('T')[0]
-  }
-  
-  planHistory.value.push({ ...plan, timestamp: Date.now() })
-  
-  request({
-    url: API.DIET_RECORD,
-    method: 'POST',
-    data: mealData
-  }).then(() => {
-    uni.showToast({ title: '记录成功', icon: 'success' })
-    loadTodayMeals()
-    currentPlan.value = null
-    uni.$emit('refreshHome')
-    uni.$emit('refreshDashboard')
-  }).catch(err => {
-    console.error('记录失败', err)
-    uni.showToast({ title: '记录失败', icon: 'none' })
-  })
-}
-
-// 获取历史食物文本
-const getPlanFoodsText = (plan) => {
-  if (!plan || !plan.foods) return ''
-  return plan.foods.map(f => f.name || '未知').join('、')
-}
+// 监听刷新事件
+uni.$on('refreshDashboard', () => {
+  loadDashboard()
+})
 </script>
 
 <style scoped>
 .container {
   min-height: 100vh;
-  background-color: #FFF8F0;
-  padding: 30rpx;
+  background: #FFF8F0;
+  padding: 24rpx;
+  padding-bottom: 120rpx;
 }
 
-.card {
-  background-color: #ffffff;
-  border-radius: 24rpx;
-  padding: 30rpx;
-  margin-bottom: 30rpx;
-}
+/* ========== 骨架屏 ========== */
+.skeleton-wrap { padding: 20rpx; }
 
-/* AI 头部 */
-.ai-header {
+.skel-header {
   display: flex;
   align-items: center;
   gap: 20rpx;
   margin-bottom: 30rpx;
 }
 
-.ai-avatar {
+.skel-circle {
   width: 100rpx;
   height: 100rpx;
-  position: relative;
+  border-radius: 50%;
+  background: linear-gradient(90deg, #f0e6d6 25%, #f8efe3 50%, #f0e6d6 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
 }
 
-.ai-chicken {
-  width: 100%;
-  height: 100%;
-  position: relative;
+.skel-lines { flex: 1; }
+
+.skel-line {
+  height: 24rpx;
+  border-radius: 12rpx;
+  margin-bottom: 16rpx;
+  background: linear-gradient(90deg, #f0e6d6 25%, #f8efe3 50%, #f0e6d6 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
 }
 
-.ac-body {
-  width: 70rpx;
-  height: 65rpx;
-  background: linear-gradient(135deg, #FFD93D 0%, #FFB347 100%);
+.skel-line.w60 { width: 60%; }
+.skel-line.w40 { width: 40%; }
+.skel-line.w80 { width: 80%; }
+
+.skel-card {
+  background: #fff;
+  border-radius: 24rpx;
+  padding: 30rpx;
+  margin-bottom: 24rpx;
+}
+
+.skel-bar {
+  height: 60rpx;
+  border-radius: 12rpx;
+  margin-top: 20rpx;
+  background: linear-gradient(90deg, #f0e6d6 25%, #f8efe3 50%, #f0e6d6 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}
+
+@keyframes shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* ========== 入场动画 ========== */
+.animate-in {
+  opacity: 0;
+  transform: translateY(40rpx);
+  animation: slideUp 0.6s ease forwards;
+}
+
+.delay-1 { animation-delay: 0.15s; }
+.delay-2 { animation-delay: 0.3s; }
+
+@keyframes slideUp {
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ========== 顶部问候 ========== */
+.dash-header {
+  display: flex;
+  align-items: center;
+  gap: 20rpx;
+  margin-bottom: 24rpx;
+  padding: 10rpx 0;
+}
+
+.dh-left { position: relative; }
+
+.dh-chicken {
+  width: 90rpx;
+  height: 90rpx;
+  position: relative;
+  animation: chickenBounce 3s ease-in-out infinite;
+}
+
+@keyframes chickenBounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-8rpx); }
+}
+
+.dc-body {
+  width: 60rpx;
+  height: 55rpx;
+  background: linear-gradient(135deg, #FFD93D, #FFB347);
   border-radius: 50% 50% 45% 45%;
   position: absolute;
-  top: 20rpx;
+  top: 18rpx;
   left: 15rpx;
 }
 
-.ac-body::before {
+.dc-body::before {
   content: '';
   position: absolute;
-  top: -12rpx;
+  top: -10rpx;
   left: 50%;
   transform: translateX(-50%);
-  width: 0;
-  height: 0;
-  border-left: 8rpx solid transparent;
-  border-right: 8rpx solid transparent;
-  border-bottom: 16rpx solid #FF6B35;
+  border-left: 7rpx solid transparent;
+  border-right: 7rpx solid transparent;
+  border-bottom: 14rpx solid #FF6B35;
 }
 
-.ac-eye {
+.dc-eye {
   position: absolute;
-  width: 8rpx;
-  height: 8rpx;
+  width: 7rpx;
+  height: 7rpx;
   background: #333;
   border-radius: 50%;
-  top: 35rpx;
+  top: 30rpx;
   z-index: 2;
 }
 
-.ac-left { left: 32rpx; }
-.ac-right { right: 32rpx; }
+.dc-l { left: 28rpx; }
+.dc-r { right: 28rpx; }
 
-.ac-beak {
+.dc-beak {
   position: absolute;
-  bottom: 30rpx;
+  bottom: 28rpx;
   left: 50%;
   transform: translateX(-50%);
-  width: 0;
-  height: 0;
-  border-left: 8rpx solid transparent;
-  border-right: 8rpx solid transparent;
-  border-top: 12rpx solid #FF6B35;
+  border-left: 7rpx solid transparent;
+  border-right: 7rpx solid transparent;
+  border-top: 10rpx solid #FF6B35;
 }
 
-.ac-hat {
+.dc-wing {
   position: absolute;
-  top: -15rpx;
-  right: 10rpx;
-  font-size: 32rpx;
-  animation: hatBounce 2s ease-in-out infinite;
+  right: 8rpx;
+  top: 30rpx;
+  width: 18rpx;
+  height: 25rpx;
+  background: #FFB347;
+  border-radius: 0 50% 50% 0;
+  transform-origin: left center;
+  animation: wingFlap 2s ease-in-out infinite;
 }
 
-@keyframes hatBounce {
-  0%, 100% { transform: translateY(0) rotate(-5deg); }
-  50% { transform: translateY(-5rpx) rotate(5deg); }
+@keyframes wingFlap {
+  0%, 100% { transform: rotate(0); }
+  50% { transform: rotate(-15deg); }
 }
 
-.ai-info {
-  flex: 1;
+.dh-right { flex: 1; }
+
+.dh-greeting {
+  display: block;
+  font-size: 34rpx;
+  font-weight: bold;
+  color: #5C4033;
 }
 
-.ai-name {
+.dh-date {
+  display: block;
+  font-size: 24rpx;
+  color: #B8956A;
+  margin-top: 6rpx;
+}
+
+/* ========== 异常提醒横幅 ========== */
+.alert-banner {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+  padding: 24rpx;
+  border-radius: 20rpx;
+  margin-bottom: 24rpx;
+}
+
+.alert-danger {
+  background: linear-gradient(135deg, #fff3e0, #ffe0b2);
+  border: 2rpx solid #ff9800;
+}
+
+.alert-warning {
+  background: linear-gradient(135deg, #fff8e1, #ffecb3);
+  border: 2rpx solid #ffc107;
+}
+
+.alert-info {
+  background: linear-gradient(135deg, #e3f2fd, #bbdefb);
+  border: 2rpx solid #2196f3;
+}
+
+.alert-icon { font-size: 36rpx; }
+
+.alert-content { flex: 1; }
+
+.alert-title {
+  display: block;
+  font-size: 28rpx;
+  font-weight: bold;
+  color: #5C4033;
+}
+
+.alert-msg {
+  display: block;
+  font-size: 24rpx;
+  color: #8B6914;
+  margin-top: 6rpx;
+}
+
+.alert-arrow {
+  font-size: 36rpx;
+  color: #B8956A;
+}
+
+/* ========== 通用卡片 ========== */
+.section-card {
+  background: #ffffff;
+  border-radius: 28rpx;
+  padding: 32rpx;
+  margin-bottom: 24rpx;
+  box-shadow: 0 8rpx 32rpx rgba(92, 64, 51, 0.06);
+}
+
+.section-title {
+  margin-bottom: 28rpx;
+}
+
+.st-text {
   display: block;
   font-size: 32rpx;
   font-weight: bold;
   color: #5C4033;
 }
 
-.ai-status {
+.st-sub {
   display: block;
-  font-size: 24rpx;
+  font-size: 22rpx;
   color: #B8956A;
   margin-top: 8rpx;
 }
 
-/* 热量概览 */
-.overview-title {
-  font-size: 28rpx;
-  font-weight: bold;
-  color: #5C4033;
-  margin-bottom: 30rpx;
-}
-
-.calorie-ring {
+/* ========== 模块1：摄入概览 ========== */
+.intake-ring-wrap {
   display: flex;
   justify-content: center;
-  margin-bottom: 30rpx;
+  position: relative;
+  margin-bottom: 28rpx;
+  height: 300rpx;
 }
 
-.ring-bg {
-  width: 240rpx;
-  height: 240rpx;
+.intake-ring {
+  width: 280rpx;
+  height: 280rpx;
+  position: relative;
+}
+
+.ir-bg {
+  position: absolute;
+  inset: 0;
   border-radius: 50%;
-  padding: 12rpx;
   background: #FFE5D0;
 }
 
-.ring-fill {
-  width: 100%;
-  height: 100%;
+.ir-fill {
+  position: absolute;
+  inset: 0;
   border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  transition: background 0.8s ease;
 }
 
-.ring-inner {
-  width: 200rpx;
-  height: 200rpx;
-  background: #ffffff;
+.ir-cover {
+  position: absolute;
+  inset: 20rpx;
   border-radius: 50%;
+  background: #ffffff;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
 }
 
-.ring-value {
-  font-size: 48rpx;
+.ir-value {
+  font-size: 56rpx;
   font-weight: bold;
   color: #FF8C42;
 }
 
-.ring-label {
-  font-size: 24rpx;
+.ir-label {
+  font-size: 22rpx;
   color: #B8956A;
+  margin-top: 4rpx;
 }
 
-.calorie-detail {
-  display: flex;
-  justify-content: space-around;
+.intake-arc-labels {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
 }
 
-.detail-item {
+.arc-label {
+  position: absolute;
   text-align: center;
 }
 
-.detail-num {
-  display: block;
-  font-size: 36rpx;
-  font-weight: bold;
-  color: #5C4033;
+.arc-label.top {
+  top: 30rpx;
+  right: 0;
 }
 
-.detail-label {
-  font-size: 24rpx;
-  color: #B8956A;
-  margin-top: 8rpx;
+.arc-label.bottom {
+  bottom: 30rpx;
+  left: 0;
 }
 
-/* 已记录餐次 */
-.meal-record {
-  display: flex;
-  align-items: center;
-  gap: 20rpx;
-  padding: 20rpx 0;
-  border-bottom: 1rpx solid #FFE5D0;
-}
-
-.meal-record:last-child {
-  border-bottom: none;
-}
-
-.meal-badge {
-  padding: 8rpx 20rpx;
-  border-radius: 20rpx;
-  font-size: 24rpx;
-  color: #ffffff;
-}
-
-.meal-badge.type-1 { background: linear-gradient(135deg, #FF8C42, #FFD93D); }
-.meal-badge.type-2 { background: linear-gradient(135deg, #4caf50, #8bc34a); }
-.meal-badge.type-3 { background: linear-gradient(135deg, #2196f3, #64b5f6); }
-.meal-badge.type-4 { background: linear-gradient(135deg, #9c27b0, #ce93d8); }
-
-.meal-info {
-  flex: 1;
-}
-
-.meal-foods {
-  display: block;
-  font-size: 28rpx;
-  color: #5C4033;
-}
-
-.meal-cal {
-  font-size: 24rpx;
-  color: #FF8C42;
-}
-
-/* 生成区域 */
-.generate-section {
-  margin-bottom: 30rpx;
-}
-
-.generate-hint {
-  display: flex;
-  align-items: center;
-  gap: 15rpx;
-  background: linear-gradient(135deg, #FFF3B0, #FFE5D0);
-  border-radius: 20rpx;
-  padding: 30rpx;
-  margin-bottom: 20rpx;
-}
-
-.hint-icon {
-  font-size: 40rpx;
-}
-
-.hint-text {
-  flex: 1;
-  font-size: 28rpx;
-  color: #8B6914;
-  line-height: 1.5;
-}
-
-.generate-btn {
-  width: 100%;
-  height: 96rpx;
-  background: linear-gradient(135deg, #FF8C42 0%, #FFD93D 100%);
-  color: #ffffff;
-  border-radius: 48rpx;
-  font-size: 32rpx;
-  font-weight: 500;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border: none;
-}
-
-.generate-btn::after { border: none; }
-
-.generate-btn[disabled] {
-  opacity: 0.7;
-}
-
-/* AI 规划结果 */
-.plan-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 30rpx;
-}
-
-.plan-badge {
-  padding: 10rpx 30rpx;
-  background: linear-gradient(135deg, #FF8C42, #FFD93D);
-  color: #ffffff;
-  border-radius: 30rpx;
-  font-size: 28rpx;
-  font-weight: 500;
-}
-
-.plan-cal {
-  font-size: 36rpx;
-  font-weight: bold;
-  color: #FF8C42;
-}
-
-.plan-foods {
-  margin-bottom: 30rpx;
-}
-
-.food-item {
-  display: flex;
-  align-items: center;
-  gap: 20rpx;
-  padding: 20rpx;
-  background: #FFF8F0;
-  border-radius: 16rpx;
-  margin-bottom: 16rpx;
-}
-
-.food-img {
-  width: 100rpx;
-  height: 100rpx;
-  border-radius: 16rpx;
-  background: #FFE5D0;
-}
-
-.food-info {
-  flex: 1;
-}
-
-.food-name {
+.arc-num {
   display: block;
   font-size: 30rpx;
-  font-weight: 500;
-  color: #5C4033;
-}
-
-.food-amount {
-  display: block;
-  font-size: 24rpx;
-  color: #B8956A;
-  margin-top: 8rpx;
-}
-
-.food-cal {
-  font-size: 24rpx;
-  color: #FF8C42;
-}
-
-/* 营养占比 */
-.plan-nutrition {
-  display: flex;
-  gap: 20rpx;
-  margin-bottom: 30rpx;
-}
-
-.nutrition-item {
-  flex: 1;
-  text-align: center;
-}
-
-.nutrition-bar {
-  height: 12rpx;
-  border-radius: 6rpx;
-  margin-bottom: 10rpx;
-}
-
-.nutrition-bar.carbs { background: linear-gradient(90deg, #ff9800, #ffc107); }
-.nutrition-bar.protein { background: linear-gradient(90deg, #4caf50, #8bc34a); }
-.nutrition-bar.fat { background: linear-gradient(90deg, #f44336, #ff5722); }
-
-/* 推荐理由 */
-.plan-reason {
-  background: linear-gradient(135deg, #FFF3B0, #FFF8F0);
-  border-radius: 16rpx;
-  padding: 25rpx;
-  margin-bottom: 30rpx;
-}
-
-.reason-title {
-  display: block;
-  font-size: 28rpx;
   font-weight: bold;
   color: #5C4033;
-  margin-bottom: 15rpx;
 }
 
-.reason-text {
-  font-size: 26rpx;
-  color: #8B6914;
-  line-height: 1.6;
+.arc-txt {
+  font-size: 20rpx;
+  color: #B8956A;
 }
 
-/* 操作按钮 */
-.plan-actions {
+/* 餐次列表 */
+.intake-meals { margin-bottom: 24rpx; }
+
+.im-row {
   display: flex;
-  gap: 20rpx;
+  align-items: center;
+  gap: 16rpx;
+  padding: 16rpx 0;
+  border-bottom: 1rpx solid #FFF3E8;
 }
 
-.action-btn {
+.im-row:last-child { border-bottom: none; }
+
+.im-badge {
+  padding: 6rpx 18rpx;
+  border-radius: 16rpx;
+  font-size: 22rpx;
+  color: #fff;
+  white-space: nowrap;
+}
+
+.im-badge.type-1 { background: linear-gradient(135deg, #FF8C42, #FFD93D); }
+.im-badge.type-2 { background: linear-gradient(135deg, #4caf50, #8bc34a); }
+.im-badge.type-3 { background: linear-gradient(135deg, #2196f3, #64b5f6); }
+.im-badge.type-4 { background: linear-gradient(135deg, #9c27b0, #ce93d8); }
+
+.im-foods {
   flex: 1;
-  height: 80rpx;
-  border-radius: 40rpx;
-  font-size: 28rpx;
+  font-size: 26rpx;
+  color: #5C4033;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.im-cal {
+  font-size: 26rpx;
+  font-weight: 600;
+  color: #FF8C42;
+  white-space: nowrap;
+}
+
+.intake-empty {
+  text-align: center;
+  padding: 30rpx 0;
+}
+
+.ie-text {
+  font-size: 26rpx;
+  color: #B8956A;
+}
+
+/* 快捷操作 */
+.quick-actions {
+  display: flex;
+  justify-content: space-around;
+  padding-top: 20rpx;
+  border-top: 1rpx solid #FFF3E8;
+}
+
+.qa-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10rpx;
+  padding: 16rpx 24rpx;
+  border-radius: 20rpx;
+  transition: transform 0.2s ease;
+}
+
+.qa-btn:active { transform: scale(0.92); }
+
+.qa-icon {
+  width: 72rpx;
+  height: 72rpx;
+  border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  border: none;
+  font-size: 32rpx;
 }
 
-.action-btn::after { border: none; }
+.camera-icon { background: linear-gradient(135deg, #FF8C42, #FFD93D); }
+.manual-icon { background: linear-gradient(135deg, #4caf50, #8bc34a); }
+.ai-icon { background: linear-gradient(135deg, #2196f3, #64b5f6); }
 
-.action-btn.primary {
-  background: linear-gradient(135deg, #FF8C42, #FFD93D);
-  color: #ffffff;
-}
-
-.action-btn.secondary {
-  background: #FFF3B0;
-  color: #FF8C42;
-}
-
-/* 历史记录 */
-.history-item {
-  display: flex;
-  align-items: center;
-  gap: 20rpx;
-  padding: 20rpx 0;
-  border-bottom: 1rpx solid #FFE5D0;
-}
-
-.history-meal {
-  padding: 6rpx 16rpx;
-  background: #FFE5D0;
-  border-radius: 12rpx;
+.qa-label {
   font-size: 22rpx;
-  color: #FF8C42;
-}
-
-.history-foods {
-  flex: 1;
-  font-size: 26rpx;
   color: #5C4033;
 }
 
-.history-cal {
-  font-size: 24rpx;
-  color: #FF8C42;
+/* ========== 模块2：营养分析 ========== */
+.macro-chart-wrap {
+  display: flex;
+  align-items: center;
+  gap: 36rpx;
+  margin-bottom: 28rpx;
 }
 
-/* 加载动画 */
-.btn-loader {
+.macro-pie {
+  width: 200rpx;
+  height: 200rpx;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: background 0.8s ease;
+}
+
+.pie-inner {
+  width: 140rpx;
+  height: 140rpx;
+  border-radius: 50%;
+  background: #fff;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.pie-label { font-size: 20rpx; color: #B8956A; }
+.pie-cal { font-size: 32rpx; font-weight: bold; color: #FF8C42; }
+.pie-unit { font-size: 18rpx; color: #B8956A; }
+
+.macro-legend { flex: 1; }
+
+.ml-item {
   display: flex;
   align-items: center;
   gap: 12rpx;
+  margin-bottom: 16rpx;
 }
 
-.bl-dot {
-  width: 12rpx;
-  height: 12rpx;
-  background: #FFFFFF;
+.ml-dot {
+  width: 20rpx;
+  height: 20rpx;
   border-radius: 50%;
-  animation: btnLoader 1.4s ease-in-out infinite;
 }
 
-.bl-dot:nth-child(2) { animation-delay: 0.2s; }
-.bl-dot:nth-child(3) { animation-delay: 0.4s; }
+.ml-dot.carbs { background: #FF9800; }
+.ml-dot.protein { background: #4CAF50; }
+.ml-dot.fat { background: #f44336; }
 
-@keyframes btnLoader {
-  0%, 80%, 100% { transform: scale(0.6); opacity: 0.5; }
-  40% { transform: scale(1); opacity: 1; }
+.ml-name {
+  font-size: 24rpx;
+  color: #5C4033;
+  width: 80rpx;
+}
+
+.ml-val {
+  font-size: 22rpx;
+  color: #B8956A;
+}
+
+/* 对比条 */
+.compare-bars { margin-top: 10rpx; }
+
+.cb-row {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+  margin-bottom: 18rpx;
+}
+
+.cb-name {
+  font-size: 24rpx;
+  color: #5C4033;
+  width: 80rpx;
+}
+
+.cb-track {
+  flex: 1;
+  height: 20rpx;
+  border-radius: 10rpx;
+  background: #FFE5D0;
+  position: relative;
+  overflow: hidden;
+}
+
+.cb-target-bar {
+  position: absolute;
+  inset: 0;
+  background: #FFE5D0;
+}
+
+.cb-actual-bar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  border-radius: 10rpx;
+  transition: width 1s ease;
+  max-width: 100%;
+}
+
+.cb-pct {
+  font-size: 24rpx;
+  font-weight: 600;
+  color: #5C4033;
+  width: 80rpx;
+  text-align: right;
+}
+
+.cb-pct.over { color: #f44336; }
+
+/* ========== 模块3：周期统计 ========== */
+.period-tabs {
+  display: flex;
+  gap: 0;
+  background: #FFF3E8;
+  border-radius: 20rpx;
+  padding: 6rpx;
+  margin-bottom: 28rpx;
+}
+
+.pt-btn {
+  flex: 1;
+  text-align: center;
+  padding: 16rpx 0;
+  border-radius: 16rpx;
+  font-size: 28rpx;
+  color: #B8956A;
+  transition: all 0.3s ease;
+}
+
+.pt-btn.active {
+  background: #ffffff;
+  color: #FF8C42;
+  font-weight: 600;
+  box-shadow: 0 4rpx 12rpx rgba(255, 140, 66, 0.15);
+}
+
+/* 柱状图 */
+.bar-chart { margin-bottom: 28rpx; }
+
+.bc-row {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  margin-bottom: 14rpx;
+}
+
+.bc-date {
+  font-size: 20rpx;
+  color: #B8956A;
+  width: 70rpx;
+  text-align: right;
+}
+
+.bc-track {
+  flex: 1;
+  height: 24rpx;
+  border-radius: 12rpx;
+  background: #FFF3E8;
+  position: relative;
+  overflow: hidden;
+}
+
+.bc-target-line {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 3rpx;
+  background: #FF8C42;
+  opacity: 0.4;
+  z-index: 1;
+}
+
+.bc-bar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  border-radius: 12rpx;
+  transition: width 0.8s ease;
+  animation: barGrow 0.8s ease forwards;
+}
+
+@keyframes barGrow {
+  from { width: 0 !important; }
+}
+
+.bc-val {
+  font-size: 22rpx;
+  font-weight: 600;
+  color: #5C4033;
+  width: 80rpx;
+}
+
+.bc-val.over { color: #f44336; }
+
+/* 统计卡片 */
+.stat-cards {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16rpx;
+  margin-bottom: 28rpx;
+}
+
+.sc-item {
+  flex: 1;
+  min-width: 40%;
+  background: #FFF8F0;
+  border-radius: 20rpx;
+  padding: 24rpx;
+  text-align: center;
+}
+
+.sc-num {
+  display: block;
+  font-size: 40rpx;
+  font-weight: bold;
+  color: #FF8C42;
+}
+
+.sc-label {
+  display: block;
+  font-size: 22rpx;
+  color: #B8956A;
+  margin-top: 8rpx;
+}
+
+/* 体重趋势 */
+.weight-trend { margin-top: 10rpx; }
+
+.wt-title {
+  display: block;
+  font-size: 28rpx;
+  font-weight: 600;
+  color: #5C4033;
+  margin-bottom: 20rpx;
+}
+
+.wt-chart {
+  height: 200rpx;
+  position: relative;
+  margin: 0 20rpx;
+}
+
+.wt-line {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+.wt-dot {
+  position: absolute;
+  width: 16rpx;
+  height: 16rpx;
+  background: #FF8C42;
+  border: 3rpx solid #fff;
+  border-radius: 50%;
+  transform: translate(-50%, 50%);
+  z-index: 2;
+}
+
+.wt-dot:hover .wt-tooltip {
+  display: flex;
+}
+
+.wt-tooltip {
+  display: none;
+  position: absolute;
+  bottom: 28rpx;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #5C4033;
+  color: #fff;
+  padding: 8rpx 16rpx;
+  border-radius: 12rpx;
+  font-size: 20rpx;
+  white-space: nowrap;
+  flex-direction: column;
+  align-items: center;
+}
+
+.wt-range {
+  display: flex;
+  justify-content: space-between;
+  padding: 10rpx 20rpx 0;
+}
+
+.wt-range text {
+  font-size: 20rpx;
+  color: #B8956A;
+}
+
+/* ========== 模块4：弹窗 ========== */
+.modal-mask {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 999;
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+}
+
+.modal-box {
+  width: 85%;
+  max-height: 70vh;
+  background: #fff;
+  border-radius: 28rpx;
+  overflow: hidden;
+  animation: modalSlide 0.3s ease;
+}
+
+@keyframes modalSlide {
+  from { transform: translateY(40rpx); opacity: 0; }
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 28rpx 32rpx;
+  border-bottom: 1rpx solid #FFE5D0;
+}
+
+.modal-title {
+  font-size: 32rpx;
+  font-weight: bold;
+  color: #5C4033;
+}
+
+.modal-close {
+  font-size: 36rpx;
+  color: #B8956A;
+  padding: 10rpx;
+}
+
+.modal-body {
+  padding: 24rpx 32rpx;
+  max-height: 55vh;
+}
+
+.alert-card {
+  padding: 24rpx;
+  border-radius: 20rpx;
+  margin-bottom: 20rpx;
+}
+
+.ac-danger { background: #fff3e0; border-left: 8rpx solid #f44336; }
+.ac-warning { background: #fff8e1; border-left: 8rpx solid #ff9800; }
+.ac-info { background: #e3f2fd; border-left: 8rpx solid #2196f3; }
+
+.ac-title {
+  display: block;
+  font-size: 28rpx;
+  font-weight: bold;
+  color: #5C4033;
+  margin-bottom: 10rpx;
+}
+
+.ac-msg {
+  display: block;
+  font-size: 26rpx;
+  color: #8B6914;
+  margin-bottom: 16rpx;
+}
+
+.ac-suggestion {
+  background: rgba(255, 255, 255, 0.6);
+  border-radius: 12rpx;
+  padding: 16rpx;
+}
+
+.ac-sug-label {
+  font-size: 24rpx;
+  font-weight: 600;
+  color: #5C4033;
+}
+
+.ac-sug-text {
+  font-size: 24rpx;
+  color: #8B6914;
+}
+
+.no-alert {
+  text-align: center;
+  padding: 60rpx 0;
+}
+
+.na-icon {
+  display: block;
+  font-size: 60rpx;
+  margin-bottom: 16rpx;
+}
+
+.na-text {
+  font-size: 28rpx;
+  color: #B8956A;
 }
 </style>

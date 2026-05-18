@@ -79,7 +79,6 @@ const request = (options) => {
       header: header,
       timeout: options.timeout || 30000, // 30秒超时
       success: (res) => {
-        console.log(`【${options.method || 'GET'}】${options.url}`, res.data)
         
         // HTTP 状态码 401 - token 过期或无效
         if (res.statusCode === 401) {

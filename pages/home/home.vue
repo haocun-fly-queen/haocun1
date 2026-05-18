@@ -15,7 +15,7 @@
 
     <!-- 顶部用户信息区域 -->
     <view class="user-section card-animate card-animate-1">
-    <view class="user-info" @click="goToProfile">
+      <view class="user-info" @click="goToProfile">
         <image class="avatar" :src="userAvatar" mode="aspectFill" @error="onAvatarError"></image>
         <view class="user-text">
           <text class="nickname">{{ userName }}</text>
@@ -38,72 +38,85 @@
       </view>
     </view>
 
-    <!-- 功能导航区域 -->
+    <!-- 功能导航区域 — 4×2 网格，8 个模块 -->
     <view class="nav-section card-animate card-animate-2">
       <view class="nav-grid">
-        <!-- 拍照识别 -->
+        <!-- 第一行 -->
         <view class="nav-item" @click="goToCamera">
           <view class="nav-icon camera-icon">
-            <text class="iconfont">📸</text>
+            <text class="icon-emoji">📸</text>
           </view>
           <text class="nav-name">拍照识别</text>
           <text class="nav-desc">AI识别食物热量</text>
         </view>
 
-        <!-- 饮食记录 -->
         <view class="nav-item" @click="goToDiet">
           <view class="nav-icon diet-icon">
-            <text class="iconfont">📝</text>
+            <text class="icon-emoji">📝</text>
           </view>
           <text class="nav-name">饮食记录</text>
           <text class="nav-desc">查看每日饮食</text>
         </view>
 
-        <!-- 数据看板 -->
         <view class="nav-item" @click="goToDashboard">
           <view class="nav-icon dashboard-icon">
-            <text class="iconfont">📊</text>
+            <text class="icon-emoji">📊</text>
           </view>
           <text class="nav-name">数据看板</text>
           <text class="nav-desc">营养分析统计</text>
         </view>
 
-        <!-- 饮食规划 -->
         <view class="nav-item" @click="goToPlan">
           <view class="nav-icon plan-icon">
-            <text class="iconfont">📋</text>
+            <text class="icon-emoji">📋</text>
           </view>
           <text class="nav-name">饮食规划</text>
           <text class="nav-desc">个性化建议</text>
         </view>
 
-        <!-- 个人中心 -->
-        <view class="nav-item" @click="goToProfile">
-          <view class="nav-icon profile-icon">
-            <text class="iconfont">👤</text>
+        <!-- 第二行 -->
+        <view class="nav-item" @click="goToExercise">
+          <view class="nav-icon exercise-icon">
+            <text class="icon-emoji">🏃</text>
           </view>
-          <text class="nav-name">个人中心</text>
-          <text class="nav-desc">档案与设置</text>
+          <text class="nav-name">运动规划</text>
+          <text class="nav-desc">AI定制运动方案</text>
         </view>
 
-        <!-- 体重记录 -->
+        <view class="nav-item highlight" @click="goToHealthReport">
+          <view class="nav-icon health-icon">
+            <text class="icon-emoji">🩺</text>
+          </view>
+          <text class="nav-name">体检报告</text>
+          <text class="nav-desc">AI解读指标</text>
+          <view class="new-badge">NEW</view>
+        </view>
+
         <view class="nav-item" @click="goToWeight">
           <view class="nav-icon weight-icon">
-            <text class="iconfont">⚖️</text>
+            <text class="icon-emoji">⚖️</text>
           </view>
           <text class="nav-name">体重记录</text>
           <text class="nav-desc">追踪体重变化</text>
         </view>
+
+        <view class="nav-item" @click="goToProfile">
+          <view class="nav-icon profile-icon">
+            <text class="icon-emoji">👤</text>
+          </view>
+          <text class="nav-name">个人中心</text>
+          <text class="nav-desc">档案与设置</text>
+        </view>
       </view>
     </view>
 
-    <!-- 今日推荐区域（优化版 - 多卡片轮播） -->
+    <!-- 今日推荐区域 -->
     <view class="recommend-section card-animate card-animate-3">
       <view class="section-title">
         <text class="title-text">🤖 今日推荐</text>
-        <text class="more" @click="goToPlan">查看更多 </text>
+        <text class="more" @click="goToPlan">查看更多 ></text>
       </view>
-      
+
       <swiper class="recommend-swiper" indicator-dots circular autoplay interval="4000">
         <swiper-item v-for="(item, idx) in recommendCards" :key="idx">
           <view class="recommend-card" :class="item.type">
@@ -114,7 +127,7 @@
             <text class="card-content">{{ item.content }}</text>
             <view class="card-footer">
               <text class="card-tag">{{ item.tag }}</text>
-              <text class="card-action" @click="handleRecommendAction(item.action, item.foodName)">去看看 →</text>
+              <text class="card-action" @click="handleRecommendAction(item.action, item.foodName)">去看看 ></text>
             </view>
           </view>
         </swiper-item>
@@ -155,7 +168,9 @@ const chickenMessages = [
   '坚持记录，健康每一天！',
   '你是最棒的！加油！',
   '记得多喝水哦~',
-  '合理饮食，快乐生活！'
+  '合理饮食，快乐生活！',
+  '体检报告可以AI解读啦！',
+  '上传体检报告，小唧帮你分析~'
 ]
 const chickenSay = () => {
   const idx = Math.floor(Math.random() * chickenMessages.length)
@@ -182,14 +197,12 @@ const getCurrentSeason = () => {
   return 'winter'
 }
 
-// 获取季节名称
 const getSeasonName = () => {
   const season = getCurrentSeason()
   const names = { spring: '🌱 春季', summer: '☀️ 夏季', autumn: '🍂 秋季', winter: '❄️ 冬季' }
   return names[season]
 }
 
-// 获取时令食物推荐
 const getSeasonalFoods = () => {
   const season = getCurrentSeason()
   const foods = {
@@ -225,7 +238,6 @@ const getSeasonalFoods = () => {
   return foods[season]
 }
 
-// 获取季节养生建议
 const getSeasonalAdvice = () => {
   const season = getCurrentSeason()
   const advices = {
@@ -237,15 +249,13 @@ const getSeasonalAdvice = () => {
   return advices[season]
 }
 
-// 生成智能推荐
 const generateRecommendations = async () => {
   try {
     const newCards = []
-    
+
     // 1. 时令推荐卡片
     const seasonalFoods = getSeasonalFoods()
     const randomFood = seasonalFoods[Math.floor(Math.random() * seasonalFoods.length)]
-    
     newCards.push({
       icon: randomFood.image,
       title: `${getSeasonName()}时令推荐`,
@@ -255,7 +265,7 @@ const generateRecommendations = async () => {
       action: 'camera',
       foodName: randomFood.name
     })
-    
+
     // 2. 饮食建议卡片
     let dietAdvice = ''
     let dietTag = ''
@@ -272,7 +282,6 @@ const generateRecommendations = async () => {
       dietAdvice = `今日还有 ${remainingCalories.value} kcal 预算，试试吃些时令食材吧`
       dietTag = '营养分析'
     }
-    
     newCards.push({
       icon: '🍽️',
       title: '饮食建议',
@@ -281,11 +290,21 @@ const generateRecommendations = async () => {
       type: consumedCalories.value === 0 ? 'warning' : (remainingCalories.value < 0 ? 'warning' : 'nutrition'),
       action: 'diet'
     })
-    
-    // 3. 季节养生建议卡片
+
+    // 3. 体检报告引导卡片
     newCards.push({
-      icon: getCurrentSeason() === 'spring' ? '🌸' : 
-            getCurrentSeason() === 'summer' ? '☀️' : 
+      icon: '🩺',
+      title: 'AI体检报告解读',
+      content: '上传体检报告，小唧帮你智能分析指标，给出饮食和运动改善建议！',
+      tag: '新功能',
+      type: 'health',
+      action: 'health'
+    })
+
+    // 4. 季节养生建议卡片
+    newCards.push({
+      icon: getCurrentSeason() === 'spring' ? '🌸' :
+            getCurrentSeason() === 'summer' ? '☀️' :
             getCurrentSeason() === 'autumn' ? '🍂' : '❄️',
       title: `${getSeasonName()}养生`,
       content: getSeasonalAdvice(),
@@ -293,26 +312,21 @@ const generateRecommendations = async () => {
       type: 'habit',
       action: 'plan'
     })
-    
+
     recommendCards.value = newCards
-    
   } catch (err) {
     console.error('生成推荐失败', err)
-    // 默认推荐
-    recommendCards.value = [
-      {
-        icon: '🍽️',
-        title: '饮食建议',
-        content: '午餐蛋白质摄入不足，建议增加鸡胸肉或鱼肉',
-        tag: '营养分析',
-        type: 'nutrition',
-        action: 'diet'
-      }
-    ]
+    recommendCards.value = [{
+      icon: '🍽️',
+      title: '饮食建议',
+      content: '午餐蛋白质摄入不足，建议增加鸡胸肉或鱼肉',
+      tag: '营养分析',
+      type: 'nutrition',
+      action: 'diet'
+    }]
   }
 }
 
-// 处理推荐点击
 const handleRecommendAction = (action, foodName = '') => {
   if (action === 'diet') {
     goToDiet()
@@ -326,40 +340,33 @@ const handleRecommendAction = (action, foodName = '') => {
     })
   } else if (action === 'plan') {
     goToPlan()
+  } else if (action === 'health') {
+    goToHealthReport()
   }
 }
 
-// 头像加载失败回退
 const onAvatarError = () => {
   userAvatar.value = '/static/default-avatar.png'
 }
 
-// 获取用户信息（修复头像 http 转 https）
 const getUserInfo = () => {
   const userInfo = uni.getStorageSync('userInfo')
   if (userInfo) {
     userName.value = userInfo.nickname || '健康达人'
     let avatar = userInfo.avatar || userInfo.avatarUrl
-    
-    // 强制将 http 转为 https
     if (avatar && avatar.startsWith('http://')) {
       avatar = avatar.replace('http://', 'https://')
     }
-    
-    // 检查头像路径是否有效（支持：http远程链接、/static/本地资源、cloud://微信云存储）
     if (avatar && (avatar.startsWith('http') || avatar.startsWith('/static/') || avatar.startsWith('cloud://'))) {
       userAvatar.value = avatar
     } else {
-      // 临时路径已失效，回退到默认头像
       userAvatar.value = '/static/default-avatar.png'
     }
   }
-  
   const profile = uni.getStorageSync('userProfile')
   if (profile && profile.nickname) {
     userName.value = profile.nickname
   }
-  // 如果 userInfo 没有头像，尝试从 userProfile 获取
   if (profile && profile.avatarUrl && userAvatar.value === '/static/default-avatar.png') {
     const profileAvatar = profile.avatarUrl
     if (profileAvatar.startsWith('http') || profileAvatar.startsWith('/static/') || profileAvatar.startsWith('cloud://')) {
@@ -368,14 +375,10 @@ const getUserInfo = () => {
   }
 }
 
-// 获取热量目标
 const loadCalorieGoal = async () => {
   try {
     const url = API.USER_CALORIE_GOAL.replace('{userId}', userId.value)
-    const res = await request({
-      url: url,
-      method: 'GET'
-    })
+    const res = await request({ url, method: 'GET' })
     if (res.code === 200 && res.data) {
       targetCalories.value = res.data
       updateCalorieDisplay()
@@ -395,7 +398,6 @@ const loadCalorieGoal = async () => {
   }
 }
 
-// 获取今日已摄入热量
 const loadTodayCalories = async () => {
   try {
     const res = await request({
@@ -418,13 +420,11 @@ const loadTodayCalories = async () => {
   }
 }
 
-// 更新热量显示
 const updateCalorieDisplay = () => {
   remainingCalories.value = Math.max(0, targetCalories.value - consumedCalories.value)
   calorieProgress.value = Math.min(100, (consumedCalories.value / targetCalories.value) * 100)
 }
 
-// 刷新数据
 const refreshData = () => {
   if (userId.value) {
     loadTodayCalories()
@@ -433,7 +433,7 @@ const refreshData = () => {
   }
 }
 
-// 导航函数
+// ========== 导航函数（8个模块） ==========
 const goToCamera = () => {
   uni.navigateTo({ url: '/pages/camera/camera' })
 }
@@ -450,15 +450,22 @@ const goToPlan = () => {
   uni.navigateTo({ url: '/pages/plan/plan' })
 }
 
-const goToProfile = () => {
-  uni.navigateTo({ url: '/pages/profile/profile' })
+const goToExercise = () => {
+  uni.navigateTo({ url: '/pages/exercise/index' })
+}
+
+const goToHealthReport = () => {
+  uni.navigateTo({ url: '/pages/health/report-list' })
 }
 
 const goToWeight = () => {
   uni.navigateTo({ url: '/pages/weight/weight' })
 }
 
-// 快捷记录
+const goToProfile = () => {
+  uni.navigateTo({ url: '/pages/profile/profile' })
+}
+
 const quickAddMeal = (mealType) => {
   const mealTypeMap = {
     'breakfast': 1,
@@ -471,29 +478,18 @@ const quickAddMeal = (mealType) => {
   })
 }
 
-// 页面加载
 onMounted(() => {
-	
-	
-	
-	
-  // ========== 检查登录状态 ==========
   const token = uni.getStorageSync('token')
   const userIdStorage = uni.getStorageSync('userId')
-  
-  console.log('首页检查 token:', token)
-  console.log('首页检查 userId:', userIdStorage)
-  
+
   if (!token || !userIdStorage) {
-    console.log('未登录，跳转登录页')
     uni.reLaunch({ url: '/pages/login/login' })
     return
   }
-  // ========== 检查结束 ==========
-  
+
   userId.value = userIdStorage
   getUserInfo()
-  
+
   if (userId.value) {
     loadCalorieGoal()
     loadTodayCalories()
@@ -513,7 +509,6 @@ onMounted(() => {
         if (profile.goalType === 2) target = Math.round(target * 1.1)
         targetCalories.value = target
       }
-      
       const today = new Date().toDateString()
       const savedIntake = uni.getStorageSync(`intake_${today}`)
       if (savedIntake) {
@@ -523,7 +518,7 @@ onMounted(() => {
     }
     generateRecommendations()
   }
-  
+
   uni.$on('refreshHome', refreshData)
 })
 
@@ -539,7 +534,7 @@ onUnmounted(() => {
   padding-bottom: 30rpx;
 }
 
-/* 用户信息区域 */
+/* ========== 用户信息区域 ========== */
 .user-section {
   background: linear-gradient(135deg, #FF8C42 0%, #FFD93D 100%);
   padding: 40rpx 30rpx 60rpx;
@@ -578,7 +573,7 @@ onUnmounted(() => {
   color: rgba(255, 255, 255, 0.8);
 }
 
-/* 热量卡片 */
+/* ========== 热量卡片 ========== */
 .calorie-card {
   background-color: rgba(255, 255, 255, 0.95);
   border-radius: 20rpx;
@@ -633,63 +628,98 @@ onUnmounted(() => {
   color: #8B6914;
 }
 
-/* 功能导航区域 */
+/* ========== 功能导航区域 — 4列网格 ========== */
 .nav-section {
   padding: 40rpx 30rpx 20rpx;
 }
 
 .nav-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 30rpx;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 20rpx;
 }
 
 .nav-item {
   background-color: #ffffff;
   border-radius: 20rpx;
-  padding: 30rpx 20rpx;
+  padding: 24rpx 8rpx 18rpx;
   text-align: center;
   box-shadow: 0 4rpx 16rpx rgba(255, 140, 66, 0.08);
   transition: transform 0.2s;
+  position: relative;
 }
 
 .nav-item:active {
-  transform: scale(0.98);
+  transform: scale(0.96);
+}
+
+/* 体检报告卡片高亮样式 */
+.nav-item.highlight {
+  background: linear-gradient(135deg, #E8F5E9 0%, #C8E6C9 100%);
+  border: 2rpx solid rgba(76, 175, 80, 0.3);
+  box-shadow: 0 4rpx 20rpx rgba(76, 175, 80, 0.15);
+}
+
+.new-badge {
+  position: absolute;
+  top: -6rpx;
+  right: -6rpx;
+  background: linear-gradient(135deg, #f44336, #FF5722);
+  color: #fff;
+  font-size: 18rpx;
+  font-weight: bold;
+  padding: 2rpx 12rpx;
+  border-radius: 16rpx;
+  animation: badgePulse 2s ease-in-out infinite;
+}
+
+@keyframes badgePulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.1); }
 }
 
 .nav-icon {
-  width: 80rpx;
-  height: 80rpx;
-  margin: 0 auto 20rpx;
+  width: 72rpx;
+  height: 72rpx;
+  margin: 0 auto 14rpx;
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 40rpx;
-  font-size: 48rpx;
+  border-radius: 36rpx;
+}
+
+.icon-emoji {
+  font-size: 42rpx;
 }
 
 .camera-icon { background-color: #FFF3B0; }
 .diet-icon { background-color: #FFE5D0; }
-.dashboard-icon { background-color: #FFF8F0; }
-.plan-icon { background-color: #FFE5D0; }
-.profile-icon { background-color: #FFF3B0; }
-.weight-icon { background-color: #FFF0F0; }
+.dashboard-icon { background-color: #E8F5E9; }
+.plan-icon { background-color: #FFF3E0; }
+.exercise-icon { background-color: #E3F2FD; }
+.health-icon { background-color: #E8F5E9; }
+.weight-icon { background-color: #FCE4EC; }
+.profile-icon { background-color: #F3E5F5; }
 
 .nav-name {
   display: block;
-  font-size: 28rpx;
-  font-weight: 500;
+  font-size: 24rpx;
+  font-weight: 600;
   color: #5C4033;
-  margin-bottom: 8rpx;
+  margin-bottom: 4rpx;
+  white-space: nowrap;
 }
 
 .nav-desc {
   display: block;
-  font-size: 22rpx;
+  font-size: 18rpx;
   color: #B8956A;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-/* 推荐区域 */
+/* ========== 推荐区域 ========== */
 .recommend-section {
   padding: 0 30rpx 30rpx;
 }
@@ -749,6 +779,12 @@ onUnmounted(() => {
   border-left: 8rpx solid #f44336;
 }
 
+/* 体检报告推荐卡片 */
+.recommend-card.health {
+  background: linear-gradient(135deg, #e8f5e9 0%, #dcedc8 100%);
+  border-left: 8rpx solid #4CAF50;
+}
+
 .card-header {
   display: flex;
   align-items: center;
@@ -793,7 +829,7 @@ onUnmounted(() => {
   color: #FF8C42;
 }
 
-/* 快捷记录区域 */
+/* ========== 快捷记录区域 ========== */
 .quick-section {
   padding: 0 30rpx;
 }
@@ -809,7 +845,7 @@ onUnmounted(() => {
   border-radius: 44rpx;
   height: 80rpx;
   line-height: 80rpx;
-  font-size: 28rpx;
+  font-size: 26rpx;
   color: #FF8C42;
   border: 2rpx solid #FFE5D0;
 }
@@ -847,6 +883,11 @@ onUnmounted(() => {
   white-space: nowrap;
   box-shadow: 0 4rpx 16rpx rgba(255, 140, 66, 0.15);
   animation: fadeInScale 0.3s ease;
+}
+
+@keyframes fadeInScale {
+  from { opacity: 0; transform: scale(0.8) translateY(10rpx); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
 }
 
 .chicken-bubble::after {
@@ -902,6 +943,11 @@ onUnmounted(() => {
   animation: chickenBlink 4s ease-in-out infinite;
 }
 
+@keyframes chickenBlink {
+  0%, 45%, 55%, 100% { transform: scaleY(1); }
+  50% { transform: scaleY(0.1); }
+}
+
 .c-eye.left { left: 28rpx; }
 .c-eye.right { right: 28rpx; }
 
@@ -938,5 +984,15 @@ onUnmounted(() => {
   right: 5rpx;
   transform: rotate(25deg);
   animation: wingFlapRight 2s ease-in-out infinite;
+}
+
+@keyframes wingFlapLeft {
+  0%, 100% { transform: rotate(-25deg); }
+  50% { transform: rotate(-45deg); }
+}
+
+@keyframes wingFlapRight {
+  0%, 100% { transform: rotate(25deg); }
+  50% { transform: rotate(45deg); }
 }
 </style>

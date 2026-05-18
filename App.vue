@@ -1,7 +1,20 @@
 <script>
 	export default {
 		onLaunch: function() {
-			console.log('App Launch')
+			
+			// #ifdef H5
+			// H5 环境下读取 URL 参数自动登录（用于 OpenClaw iframe 嵌入）
+			try {
+				const params = new URLSearchParams(window.location.search)
+				const userId = params.get('userId')
+				if (userId) {
+					uni.setStorageSync('userId', userId)
+					console.log('[OpenClaw] 自动登录 userId:', userId)
+				}
+			} catch (e) {
+				console.error('读取 URL 参数失败', e)
+			}
+			// #endif
 			
 			// #ifdef MP-WEIXIN
 			// 初始化微信云开发（用于头像云存储等功能）
@@ -11,17 +24,14 @@
 					env: 'cloudbase-d0gaofkdc3e053fea',
 					traceUser: true
 				})
-				console.log('微信云开发已初始化')
 			} else {
 				console.warn('当前基础库版本不支持云开发')
 			}
 			// #endif
 		},
 		onShow: function() {
-			console.log('App Show')
 		},
 		onHide: function() {
-			console.log('App Hide')
 		}
 	}
 </script>

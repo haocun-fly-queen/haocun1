@@ -1,0 +1,37 @@
+{
+  "pages": [
+    "pages/login/login",
+    "pages/profile/profile",
+    "pages/home/home",
+    "pages/camera/camera",
+    "pages/diet/diet",
+    "pages/dashboard/dashboard",
+    "pages/plan/plan",
+    "pages/health/report-list",
+    "pages/health/report-upload",
+    "pages/health/report-detail",
+    "pages/health/indicator-detail",
+    "pages/health/score",
+    "pages/health/trend",
+    "pages/weight/weight",
+    "pages/exercise/index",
+    "pages/exercise/record",
+    "pages/exercise/stats",
+    "pages/exercise/settings"
+  ],
+  "window": {
+    "navigationBarTextStyle": "white",
+    "navigationBarTitleText": "鸡仔健康",
+    "navigationBarBackgroundColor": "#FF8C42",
+    "backgroundColor": "#FFF8F0"
+  },
+  "permission": {
+    "scope.camera": {
+      "desc": "用于拍照识别食物和上传头像"
+    },
+    "scope.userLocation": {
+      "desc": "用于获取您的位置信息以提供本地化服务"
+    }
+  },
+  "usingComponents": {}
+}

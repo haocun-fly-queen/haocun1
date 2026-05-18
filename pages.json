@@ -1,4 +1,9 @@
 {
+	
+	  "easycom": {
+	    "autoscan": true,
+	    "custom": {}
+	  },
   "pages": [
     {
       "path": "pages/login/login",
@@ -56,6 +61,65 @@
         "navigationBarTextStyle": "white"
       }
     },
+	// ============================================================
+	// pages.json — 在原有 pages 数组中追加以下6个页面
+	// ============================================================
+	
+	// 请在你原有 pages.json 的 pages 数组末尾追加以下对象：
+	
+	
+	
+	    {
+	      "path": "pages/health/report-list",
+	      "style": {
+	        "navigationBarTitleText": "体检报告",
+	        "navigationBarBackgroundColor": "#FFF8F0",
+	        "navigationBarTextStyle": "black"
+	      }
+	    },
+	    {
+	      "path": "pages/health/report-upload",
+	      "style": {
+	        "navigationBarTitleText": "上传报告",
+	        "navigationBarBackgroundColor": "#FFF8F0",
+	        "navigationBarTextStyle": "black"
+	      }
+	    },
+	    {
+	      "path": "pages/health/report-detail",
+	      "style": {
+	        "navigationBarTitleText": "报告详情",
+	        "navigationBarBackgroundColor": "#FFF8F0",
+	        "navigationBarTextStyle": "black"
+	      }
+	    },
+	    {
+	      "path": "pages/health/indicator-detail",
+	      "style": {
+	        "navigationBarTitleText": "指标详情",
+	        "navigationBarBackgroundColor": "#FFF8F0",
+	        "navigationBarTextStyle": "black"
+	      }
+	    },
+	    {
+	      "path": "pages/health/score",
+	      "style": {
+	        "navigationBarTitleText": "健康评分",
+	        "navigationBarBackgroundColor": "#FFF8F0",
+	        "navigationBarTextStyle": "black"
+	      }
+	    },
+	    {
+	      "path": "pages/health/trend",
+	      "style": {
+	        "navigationBarTitleText": "指标趋势",
+	        "navigationBarBackgroundColor": "#FFF8F0",
+	        "navigationBarTextStyle": "black"
+	      }
+	    },
+	  
+	
+
     {
       "path": "pages/weight/weight",
       "style": {
@@ -63,7 +127,12 @@
         "navigationBarBackgroundColor": "#FF8C42",
         "navigationBarTextStyle": "white"
       }
-    }
+    },
+	
+	{ "path": "pages/exercise/index" },
+	{ "path": "pages/exercise/record"},
+	{ "path": "pages/exercise/stats" },
+	{ "path": "pages/exercise/settings" }
   ],
   "globalStyle": {
     "navigationBarTextStyle": "black",

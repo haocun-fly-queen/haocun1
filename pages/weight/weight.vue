@@ -30,7 +30,7 @@
           <text class="stat-label">平均体重</text>
         </view>
       </view>
-      
+
       <!-- 进度条 -->
       <view class="progress-section" v-if="targetWeight && currentWeight">
         <view class="progress-label">
@@ -54,14 +54,14 @@
       </view>
       <view class="ai-footer">
         <text class="ai-time">{{ currentDate }}</text>
-        <text class="ai-refresh" @click="refreshAdvice">换一换 💡</text>
+        <text class="ai-refresh" @click="refreshAdvice">换一换 🔄</text>
       </view>
     </view>
 
     <!-- 体重趋势图 -->
     <view class="chart-card">
       <view class="card-title">
-        <text>📈 体重趋势</text>
+        <text>📊 体重趋势</text>
         <picker mode="selector" :range="rangeOptions" @change="onRangeChange">
           <text class="range-picker">{{ rangeOptions[currentRange] }}</text>
         </picker>
@@ -97,12 +97,12 @@
     <!-- 历史记录列表 -->
     <view class="history-card">
       <view class="card-title">
-        <text>📋 历史记录</text>
+        <text>📝 历史记录</text>
         <text class="record-count">{{ weightRecords.length }}条</text>
       </view>
-      
+
       <view class="record-list">
-        <view v-for="record in weightRecords" :key="record.id" class="record-item">
+        <view v-for="(record, index) in weightRecords" :key="record.id" class="record-item">
           <view class="record-info">
             <text class="record-date">{{ formatDate(record.recordDate) }}</text>
             <text class="record-weight">{{ record.weight }} kg</text>
@@ -113,7 +113,7 @@
           </view>
         </view>
       </view>
-      
+
       <view v-if="weightRecords.length === 0" class="empty-list">
         <view class="empty-chicken-small">
           <view class="ecs-body"></view>
@@ -133,10 +133,10 @@
         <view class="modal-body">
           <view class="form-item">
             <text class="form-label">体重 (kg)</text>
-            <input 
-              class="form-input" 
-              type="digit" 
-              v-model="formWeight" 
+            <input
+              class="form-input"
+              type="digit"
+              v-model="formWeight"
               placeholder="请输入体重"
               :focus="modalVisible"
             />
@@ -164,8 +164,8 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import request from '../../utils/request'
-import { API } from '../../config'
 
+// ============ 响应式数据 ============
 const userId = ref(null)
 const loading = ref(false)
 const showModal = ref(false)
@@ -193,7 +193,329 @@ const currentDate = ref('')
 const rangeOptions = ['近7天', '近30天', '全部']
 const currentRange = ref(0)
 
-// 计算属性
+// ============ OpenClaw Bridge ============
+const openclawBridge = ref(null)
+
+// 初始化 OpenClaw Bridge
+const initOpenClawBridge = () => {
+  const bridge = {
+    version: '1.0.0',
+    ready: true,
+    
+    // 执行操作
+    execute: async (action, params = {}) => {
+      console.log('[OpenClaw] 执行:', action, params)
+      
+      switch (action) {
+        case 'click':
+          return doClick(params)
+        case 'input':
+          return doInput(params)
+        case 'getValue':
+          return doGetValue(params)
+        case 'getText':
+          return doGetText(params)
+        case 'getPageInfo':
+          return doGetPageInfo()
+        case 'recordWeight':
+          return doRecordWeight(params)
+        case 'editWeight':
+          return doEditWeight(params)
+        case 'deleteWeight':
+          return doDeleteWeight(params)
+        case 'getWeightData':
+          return doGetWeightData()
+        case 'setUserId':
+          return doSetUserId(params)
+        default:
+          throw new Error('未知操作: ' + action)
+      }
+    }
+  }
+  
+  // 点击操作
+  const doClick = async ({ text, index }) => {
+    if (text === '记录体重') {
+      showAddModal()
+      return { clicked: true, action: 'showAddModal' }
+    }
+    if (text === '保存') {
+      await saveWeight()
+      return { clicked: true, action: 'saveWeight' }
+    }
+    if (text === '取消') {
+      closeModal()
+      return { clicked: true, action: 'closeModal' }
+    }
+    if (text === '编辑') {
+      const record = weightRecords.value[index || 0]
+      if (record) {
+        editRecord(record)
+        return { clicked: true, action: 'editRecord', record }
+      }
+    }
+    if (text === '删除') {
+      const record = weightRecords.value[index || 0]
+      if (record) {
+        deleteRecord(record.id)
+        return { clicked: true, action: 'deleteRecord', id: record.id }
+      }
+    }
+    return { clicked: false, error: '未识别的按钮' }
+  }
+  
+  // 输入操作
+  const doInput = async ({ field, value }) => {
+    if (field === 'weight') {
+      formWeight.value = String(value)
+      return { input: true, field: 'weight', value }
+    }
+    if (field === 'date') {
+      formDate.value = value
+      return { input: true, field: 'date', value }
+    }
+    if (field === 'remark') {
+      formRemark.value = value
+      return { input: true, field: 'remark', value }
+    }
+    return { input: false, error: '未识别的字段' }
+  }
+  
+  // 获取值
+  const doGetValue = ({ field }) => {
+    const values = {
+      weight: formWeight.value,
+      date: formDate.value,
+      remark: formRemark.value
+    }
+    return { field, value: values[field] || null }
+  }
+  
+  // 获取文本
+  const doGetText = ({ field }) => {
+    if (field === 'currentWeight') return { text: currentWeight.value }
+    if (field === 'targetWeight') return { text: targetWeight.value }
+    if (field === 'avgWeight') return { text: avgWeight.value }
+    return { text: null }
+  }
+  
+  // 获取页面信息
+  const doGetPageInfo = () => {
+    // #ifdef H5
+    const pageUrl = window.location.href
+    const pageTitle = document.title
+    // #endif
+    // #ifndef H5
+    const pageUrl = ''
+    const pageTitle = ''
+    // #endif
+    return {
+      url: pageUrl,
+      title: pageTitle,
+      userId: userId.value,
+      recordsCount: weightRecords.value.length,
+      ready: true
+    }
+  }
+  
+  // 记录体重（完整流程）
+  const doRecordWeight = async ({ weight, date, remark }) => {
+    console.log('[OpenClaw] 开始记录体重:', weight, '当前 userId:', userId.value)
+    
+    if (!userId.value) {
+      throw new Error('userId 未设置，请先调用 setUserId')
+    }
+    
+    showAddModal()
+    await wait(1000)
+    
+    console.log('[OpenClaw] 弹窗已打开，准备填入:', weight)
+    formWeight.value = String(weight)
+    if (date) formDate.value = date
+    if (remark) formRemark.value = remark
+    await wait(500)
+    
+    console.log('[OpenClaw] 表单值:', { weight: formWeight.value, date: formDate.value })
+    
+    if (!formWeight.value) {
+      throw new Error('体重输入失败，formWeight 为空')
+    }
+    
+    try {
+      await saveWeight()
+    } catch (err) {
+      console.error('[OpenClaw] saveWeight 失败:', err)
+      throw new Error('保存失败: ' + (err.message || JSON.stringify(err)))
+    }
+    
+    await wait(1000)
+    
+    return { 
+      success: true, 
+      weight, 
+      date: formDate.value,
+      message: '体重记录成功' 
+    }
+  }
+  
+  // 修改体重（完整流程）
+  const doEditWeight = async ({ index, weight }) => {
+    if (!userId.value) {
+      throw new Error('userId 未设置，请先调用 setUserId')
+    }
+    
+    const record = weightRecords.value[index]
+    if (!record) throw new Error('记录不存在')
+    
+    editRecord(record)
+    await wait(1000)
+    
+    formWeight.value = String(weight)
+    await wait(500)
+    
+    if (!formWeight.value) {
+      throw new Error('体重输入失败，formWeight 为空')
+    }
+    
+    try {
+      await saveWeight()
+    } catch (err) {
+      console.error('[OpenClaw] saveWeight 失败:', err)
+      throw new Error('保存失败: ' + (err.message || JSON.stringify(err)))
+    }
+    
+    await wait(1000)
+    
+    return { 
+      success: true, 
+      index, 
+      weight,
+      message: '体重修改成功' 
+    }
+  }
+  
+  // 删除体重
+  const doDeleteWeight = async ({ index }) => {
+    const record = weightRecords.value[index]
+    if (!record) throw new Error('记录不存在')
+    
+    deleteRecord(record.id)
+    await wait(1000)
+    
+    return { 
+      success: true, 
+      index, 
+      id: record.id,
+      message: '体重删除成功' 
+    }
+  }
+  
+  // 设置用户ID（用于自动登录）
+  const doSetUserId = ({ userId: uid }) => {
+    if (!uid) throw new Error('userId 不能为空')
+    userId.value = uid
+    uni.setStorageSync('userId', uid)
+    loadStats()
+    loadRecords()
+    return { success: true, userId: uid }
+  }
+  
+  // 获取体重数据
+  const doGetWeightData = () => {
+    return {
+      currentWeight: currentWeight.value,
+      targetWeight: targetWeight.value,
+      avgWeight: avgWeight.value,
+      difference: differenceText.value,
+      records: weightRecords.value.map((r, idx) => ({
+        index: idx,
+        id: r.id,
+        date: r.recordDate,
+        weight: r.weight,
+        remark: r.remark
+      }))
+    }
+  }
+  
+  // 工具函数
+  const wait = (ms) => new Promise(resolve => setTimeout(resolve, ms))
+  
+  // 暴露到全局
+  // #ifdef H5
+  window.OpenClawBridge = bridge
+  // #endif
+  openclawBridge.value = bridge
+  
+  console.log('[OpenClawBridge] 已初始化')
+}
+
+// 设置消息监听
+const setupMessageListener = () => {
+  // #ifdef H5
+  window.addEventListener('message', async (event) => {
+    const { data } = event
+    
+    // 安全检查
+    if (data.type !== 'OPENCLAW_REQUEST') return
+    
+    const { id, action, params } = data
+    
+    console.log('[OpenClawBridge] 收到请求:', action, params)
+    
+    try {
+      const result = await openclawBridge.value.execute(action, params)
+      
+      // 返回成功结果
+      if (event.source) {
+        event.source.postMessage({
+          type: 'OPENCLAW_RESPONSE',
+          id: id,
+          success: true,
+          data: result
+        }, '*')
+      }
+    } catch (error) {
+      console.error('[OpenClawBridge] 执行出错:', error)
+      // 返回错误
+      if (event.source) {
+        event.source.postMessage({
+          type: 'OPENCLAW_RESPONSE',
+          id: id,
+          success: false,
+          error: error.message || error.toString() || '未知错误'
+        }, '*')
+      }
+    }
+  })
+  // #endif
+}
+
+// 通知 OpenClaw 页面已就绪
+const notifyReady = () => {
+  // #ifdef H5
+  // 向父窗口发送就绪消息
+  if (window.parent && window.parent !== window) {
+    window.parent.postMessage({
+      type: 'OPENCLAW_READY',
+      version: '1.0.0',
+      url: window.location.href,
+      page: 'weight'
+    }, '*')
+  }
+  
+  // 也向顶层窗口发送
+  if (window.top && window.top !== window) {
+    window.top.postMessage({
+      type: 'OPENCLAW_READY',
+      version: '1.0.0',
+      url: window.location.href,
+      page: 'weight'
+    }, '*')
+  }
+  // #endif
+}
+
+// ============ 计算属性 ============
 const differenceText = computed(() => {
   if (!targetWeight.value || !currentWeight.value) return '--'
   const diff = currentWeight.value - targetWeight.value
@@ -210,15 +532,13 @@ const differenceClass = computed(() => {
   return ''
 })
 
-// 目标进度百分比
 const progressPercent = computed(() => {
   if (!targetWeight.value || !currentWeight.value) return 0
-  
   if (currentWeight.value <= targetWeight.value) return 100
   
   let startWeight = currentWeight.value
   if (weightRecords.value.length > 0) {
-    const sortedRecords = [...weightRecords.value].sort((a, b) => 
+    const sortedRecords = [...weightRecords.value].sort((a, b) =>
       new Date(a.recordDate) - new Date(b.recordDate)
     )
     startWeight = sortedRecords[0]?.weight || currentWeight.value
@@ -234,14 +554,14 @@ const progressPercent = computed(() => {
   return Math.min(100, Math.max(0, percent))
 })
 
-// 生成 AI 建议
+// ============ 方法 ============
 const generateAdvice = () => {
   if (!weightRecords.value.length) {
-    aiSuggestion.value = '📝 开始记录体重吧！坚持记录，AI会为你提供个性化建议 💪'
+    aiSuggestion.value = '🐥 开始记录体重吧！坚持记录，AI会为你提供个性化建议 ✨'
     return
   }
   
-  const sortedRecords = [...weightRecords.value].sort((a, b) => 
+  const sortedRecords = [...weightRecords.value].sort((a, b) =>
     new Date(b.recordDate) - new Date(a.recordDate)
   )
   const latest = sortedRecords[0]
@@ -255,47 +575,45 @@ const generateAdvice = () => {
   let changeText = ''
   if (previous) {
     change = currentW - previous.weight
-    changeText = change > 0 ? `上升了 ${change.toFixed(1)}kg` : 
-                 change < 0 ? `下降了 ${Math.abs(change).toFixed(1)}kg` : '保持不变'
+    changeText = change > 0 ? `上升了 ${change.toFixed(1)}kg` :
+      change < 0 ? `下降了 ${Math.abs(change).toFixed(1)}kg` : '保持不变'
   }
-  
-  const totalChange = firstRecord ? currentW - firstRecord.weight : 0
   
   const suggestions = []
   
   if (targetW && currentW > targetW) {
     const remaining = (currentW - targetW).toFixed(1)
-    suggestions.push(`🎯 距离目标还差 ${remaining}kg，继续加油！`)
-    suggestions.push(`💪 再减 ${remaining}kg 就能达成目标啦！`)
-    suggestions.push(`🌟 坚持就是胜利！距离理想体重还有 ${remaining}kg`)
+    suggestions.push(`💪 距离目标还差 ${remaining}kg，继续加油！`)
+    suggestions.push(`🎯 再减 ${remaining}kg 就能达成目标啦！`)
+    suggestions.push(`✨ 坚持就是胜利！距离理想体重还有 ${remaining}kg`)
   }
   
   if (targetW && currentW <= targetW) {
     suggestions.push(`🎉 恭喜！已达到目标体重！继续保持好习惯！`)
     suggestions.push(`🏆 太棒了！你已经达成目标！为你骄傲！`)
-    suggestions.push(`✨ 目标达成！接下来要保持这个好状态哦！`)
+    suggestions.push(`⭐ 目标达成！接下来要保持这个好状态哦！`)
   }
   
   if (change > 0) {
-    suggestions.push(`⚠️ 体重${changeText}，建议控制饮食，增加运动`)
-    suggestions.push(`🍎 最近体重有点上升，试试减少高热量食物吧`)
+    suggestions.push(`📈 体重${changeText}，建议控制饮食，增加运动`)
+    suggestions.push(`🥗 最近体重有点上升，试试减少高热量食物吧`)
     suggestions.push(`🏃 体重上升了，今天运动一下怎么样？`)
   }
   
   if (change < 0) {
-    suggestions.push(`🎉 太棒了！体重${changeText}，继续加油！`)
-    suggestions.push(`🌟 效果不错！${changeText}，保持这个节奏！`)
-    suggestions.push(`💪 好样的！${changeText}，离目标更近了！`)
+    suggestions.push(`📉 太棒了！体重${changeText}，继续加油！`)
+    suggestions.push(`✅ 效果不错！${changeText}，保持这个节奏！`)
+    suggestions.push(`🌟 好样的！${changeText}，离目标更近了！`)
   }
   
   if (Math.abs(change) < 0.5 && previous) {
-    suggestions.push(`📊 体重${changeText}，坚持记录，慢慢会看到变化`)
-    suggestions.push(`💡 保持稳定也是进步，继续坚持好习惯！`)
+    suggestions.push(`➡️ 体重${changeText}，坚持记录，慢慢会看到变化`)
+    suggestions.push(`💫 保持稳定也是进步，继续坚持好习惯！`)
   }
   
-  suggestions.push(`🥗 每天喝够8杯水，促进新陈代谢`)
-  suggestions.push(`🏃‍♀️ 每周运动3-4次，每次30分钟效果更好`)
-  suggestions.push(`🍽️ 细嚼慢咽，每餐吃七分饱`)
+  suggestions.push(`💧 每天喝够8杯水，促进新陈代谢`)
+  suggestions.push(`🚶 每周运动3-4次，每次30分钟效果更好`)
+  suggestions.push(`🍎 细嚼慢咽，每餐吃七分饱`)
   suggestions.push(`😴 保证充足睡眠，有助于体重管理`)
   suggestions.push(`📝 坚持记录饮食，更了解自己的习惯`)
   
@@ -303,19 +621,16 @@ const generateAdvice = () => {
   aiSuggestion.value = suggestions[randomIndex]
 }
 
-// 刷新建议
 const refreshAdvice = () => {
   generateAdvice()
   uni.showToast({ title: '已刷新', icon: 'none', duration: 1000 })
 }
 
-// 格式化当前日期
 const formatCurrentDate = () => {
   const now = new Date()
   currentDate.value = `${now.getMonth() + 1}月${now.getDate()}日`
 }
 
-// 格式化日期
 const formatDate = (date) => {
   if (!date) return ''
   return date.substring(5)
@@ -326,7 +641,6 @@ const formatLabel = (date) => {
   return date.substring(5, 10)
 }
 
-// 计算柱状图高度
 const getBarHeight = (weight) => {
   const weights = chartData.value.map(w => w.weight)
   const max = Math.max(...weights, 100)
@@ -336,7 +650,6 @@ const getBarHeight = (weight) => {
   return 30 + ((weight - min) / range) * 150
 }
 
-// 趋势样式
 const getTrendClass = (index) => {
   if (index === 0) return ''
   const current = chartData.value[index].weight
@@ -346,7 +659,6 @@ const getTrendClass = (index) => {
   return ''
 }
 
-// 加载统计数据
 const loadStats = async () => {
   try {
     const res = await request({
@@ -355,7 +667,6 @@ const loadStats = async () => {
       data: { userId: userId.value }
     })
     if (res.code === 200 && res.data) {
-      console.log('统计数据:', res.data)
       currentWeight.value = res.data.currentWeight
       targetWeight.value = res.data.targetWeight
       avgWeight.value = res.data.avgWeight
@@ -365,18 +676,17 @@ const loadStats = async () => {
   }
 }
 
-// 加载体重记录
 const loadRecords = async () => {
   try {
     let days = 30
     if (currentRange.value === 0) days = 7
     else if (currentRange.value === 1) days = 30
     else days = 365
-    
+
     const res = await request({
       url: '/api/weight/recent',
       method: 'GET',
-      data: { 
+      data: {
         userId: userId.value,
         days: days
       }
@@ -385,8 +695,6 @@ const loadRecords = async () => {
       weightRecords.value = res.data || []
       weightRecords.value.sort((a, b) => new Date(b.recordDate) - new Date(a.recordDate))
       chartData.value = [...(res.data || [])].sort((a, b) => new Date(a.recordDate) - new Date(b.recordDate))
-      
-      // 生成 AI 建议
       generateAdvice()
       formatCurrentDate()
     }
@@ -395,13 +703,11 @@ const loadRecords = async () => {
   }
 }
 
-// 范围切换
 const onRangeChange = (e) => {
   currentRange.value = e.detail.value
   loadRecords()
 }
 
-// 显示添加弹窗
 const showAddModal = () => {
   isEdit.value = false
   editId.value = null
@@ -412,7 +718,6 @@ const showAddModal = () => {
   showModal.value = true
 }
 
-// 编辑记录
 const editRecord = (record) => {
   isEdit.value = true
   editId.value = record.id
@@ -423,20 +728,18 @@ const editRecord = (record) => {
   showModal.value = true
 }
 
-// 日期变更
 const onDateChange = (e) => {
   formDate.value = e.detail.value
 }
 
-// 保存体重
 const saveWeight = async () => {
   if (!formWeight.value) {
     uni.showToast({ title: '请输入体重', icon: 'none' })
     return
   }
-  
+
   uni.showLoading({ title: '保存中...', mask: true })
-  
+
   try {
     const res = await request({
       url: '/api/weight/record',
@@ -448,7 +751,7 @@ const saveWeight = async () => {
         remark: formRemark.value
       }
     })
-    
+
     if (res.code === 200) {
       uni.hideLoading()
       uni.showToast({ title: '保存成功', icon: 'success' })
@@ -462,10 +765,10 @@ const saveWeight = async () => {
     uni.hideLoading()
     console.error('保存失败', err)
     uni.showToast({ title: err.message || '保存失败', icon: 'none' })
+    throw err
   }
 }
 
-// 删除记录
 const deleteRecord = (recordId) => {
   uni.showModal({
     title: '提示',
@@ -474,14 +777,15 @@ const deleteRecord = (recordId) => {
       if (res.confirm) {
         try {
           const result = await request({
-            url: `/api/weight/record/${recordId}`,
-            method: 'DELETE',
-            data: { userId: userId.value }
+            url: `/api/weight/record/${recordId}?userId=${userId.value}`,
+            method: 'DELETE'
           })
           if (result.code === 200) {
             uni.showToast({ title: '删除成功', icon: 'success' })
             loadStats()
             loadRecords()
+          } else {
+            uni.showToast({ title: result.message || '删除失败', icon: 'none' })
           }
         } catch (err) {
           console.error('删除失败', err)
@@ -492,7 +796,6 @@ const deleteRecord = (recordId) => {
   })
 }
 
-// 关闭弹窗
 const closeModal = () => {
   showModal.value = false
   isEdit.value = false
@@ -503,6 +806,7 @@ const closeModal = () => {
   modalVisible.value = false
 }
 
+// ============ 生命周期 ============
 onMounted(() => {
   userId.value = uni.getStorageSync('userId')
   if (userId.value) {
@@ -511,6 +815,13 @@ onMounted(() => {
   } else {
     uni.showToast({ title: '请先登录', icon: 'none' })
   }
+  
+  // 初始化 OpenClaw Bridge
+  initOpenClawBridge()
+  setupMessageListener()
+  
+  // 通知 OpenClaw 已就绪
+  setTimeout(notifyReady, 1000)
 })
 </script>
 

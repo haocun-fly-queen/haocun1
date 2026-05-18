@@ -62,9 +62,18 @@
     "mp-weixin" : {
         "appid" : "wx1d62f62a4a9d0c40",
         "setting" : {
-            "urlCheck" : false
+            "urlCheck" : true,
+            "minified" : true
         },
-        "usingComponents" : true
+        "usingComponents" : true,
+        "permission" : {
+            "scope.camera" : {
+                "desc" : "用于拍照识别食物和上传头像"
+            },
+            "scope.userLocation" : {
+                "desc" : "用于获取您的位置信息以提供本地化服务"
+            }
+        }
     },
     "mp-alipay" : {
         "usingComponents" : true

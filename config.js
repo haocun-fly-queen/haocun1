@@ -1,15 +1,17 @@
 const env = {
     dev: {
-        baseUrl: 'http://120.26.65.37:9050'
+        baseUrl: 'https://laobushi.fun-med.cn'
     },
     prod: {
-        baseUrl: 'http://120.26.65.37:9050'
+        baseUrl: 'https://laobushi.fun-med.cn'
     }
 }
 
-const currentEnv = 'prod'
+const currentEnv = 'prod';
 
-export const API_BASE_URL = env[currentEnv].baseUrl
+export const API_BASE_URL = env[currentEnv].baseUrl;
+
+export default env;
 
 export const API = {
     USER_LOGIN_WECHAT: '/api/user/login/wechat',
@@ -18,6 +20,10 @@ export const API = {
     USER_INFO: '/api/user',
     USER_PROFILE: '/api/user/{userId}/profile',
     USER_CALORIE_GOAL: '/api/user/{userId}/calorie-goal',
+	USER_CALORIE_GOAL: '/api/user/{userId}/calorie-goal',
+	  USER_REGISTER: '/api/user/register',             // ← 确认有
+	  USER_LOGIN_PASSWORD: '/api/user/login-password',  // ← 确认有
+	  USER_CHECK_USERNAME: '/api/user/check-username',  // ← 确认有
     
     FOOD_LIST: '/api/food/list',
     FOOD_SEARCH: '/api/food/search',
@@ -25,7 +31,6 @@ export const API = {
     FOOD_CATEGORIES: '/api/food/categories',
     FOOD_DETAIL: '/api/food',
     
-    // 自定义食物
     FOOD_CUSTOM_LIST: '/api/food/custom/list',
     FOOD_CUSTOM_ADD: '/api/food/custom',
     FOOD_CUSTOM_DELETE: '/api/food/custom',
@@ -36,11 +41,42 @@ export const API = {
     DIET_WEEKLY: '/api/diet/weekly',
     DIET_RECORD_DETAIL: '/api/diet/record',
     
+	
+	// 邮箱相关（新增）
+	USER_SEND_EMAIL_CODE: '/api/user/send-email-code',
+	USER_LOGIN_EMAIL: '/api/user/login-email',
+	USER_REGISTER_EMAIL: '/api/user/register-email',
+	USER_LOGIN_EMAIL_PASSWORD: '/api/user/login-email-password',
+	USER_CHECK_EMAIL: '/api/user/check-email',
+
+	// 运动相关
+	EXERCISE_DASHBOARD: '/api/exercise/dashboard',
+	EXERCISE_PLAN_GENERATE: '/api/exercise/plan/generate',
+	EXERCISE_PLAN_TODAY: '/api/exercise/plan/today',
+	EXERCISE_RECORD: '/api/exercise/record',
+	EXERCISE_RECORDS: '/api/exercise/records',
+	EXERCISE_CALENDAR: '/api/exercise/calendar',
+	EXERCISE_STATS: '/api/exercise/stats',
+	EXERCISE_FATIGUE: '/api/exercise/fatigue',
+	EXERCISE_LIBRARY: '/api/exercise/library',
+	EXERCISE_REMINDER: '/api/exercise/reminder',
+
+
+HEALTH_REPORT_UPLOAD: '/api/health/report/upload',
+  HEALTH_REPORT_DETAIL: '/api/health/report',
+  HEALTH_REPORT_LIST: '/api/health/reports',
+  HEALTH_REPORT_CONFIRM: '/api/health/report',
+  HEALTH_SCORE: '/api/health/score',
+  HEALTH_INDICATOR_TREND: '/api/health/indicator/trend',
+  HEALTH_REPORT_DELETE: '/api/health/report',
+  
     AI_RECOGNIZE: '/api/ai/recognize',
     AI_UPLOAD: '/api/upload',
 	
+    AI_DIET_PLAN: '/api/ai/diet-plan',
+	AI_DAILY_PLAN: '/api/ai/daily-plan',
+DASHBOARD_OVERVIEW: '/api/dashboard/overview',
 
-	    AI_DIET_PLAN: '/api/ai/diet-plan',  // 新增：AI饮食规划
 }
 
 export const DEFAULT_AVATAR = '/static/default-avatar.png'

@@ -354,24 +354,47 @@ const imageToBase64 = (filePath) => {
 
     // #ifdef H5
     // H5 端
-    uni.request({
-      url: filePath,
-      responseType: 'blob',
-      success: (res) => {
-        const blob = res.data
-        const reader = new FileReader()
-        reader.onloadend = () => resolve(reader.result)
-        reader.onerror = reject
-        reader.readAsDataURL(blob)
-      },
-      fail: reject
-    })
+    if (filePath.startsWith('data:')) {
+      resolve(filePath)
+    } else if (filePath.startsWith('blob:')) {
+      fetch(filePath)
+        .then(r => r.blob())
+        .then(blob => {
+          const reader = new FileReader()
+          reader.onloadend = () => resolve(reader.result)
+          reader.onerror = reject
+          reader.readAsDataURL(blob)
+        })
+        .catch(reject)
+    } else {
+      resolve(filePath)
+    }
     // #endif
   })
 }
 
 // 拍照
 const takePhoto = () => {
+  // #ifdef H5
+  const input = document.createElement('input')
+  input.type = 'file'
+  input.accept = 'image/*'
+  input.capture = 'environment'
+  input.addEventListener('change', (e) => {
+    const file = e.target.files[0]
+    if (!file) return
+    const reader = new FileReader()
+    reader.onload = (event) => {
+      const base64 = event.target.result
+      currentImage.value = base64
+      recognizeFood(base64, true)
+    }
+    reader.readAsDataURL(file)
+  })
+  input.click()
+  // #endif
+
+  // #ifndef H5
   uni.chooseImage({
     count: 1,
     sourceType: ['camera'],
@@ -384,10 +407,30 @@ const takePhoto = () => {
       uni.showToast({ title: '拍照失败，请重试', icon: 'none' })
     }
   })
+  // #endif
 }
 
 // 从相册选择
 const chooseFromAlbum = () => {
+  // #ifdef H5
+  const input = document.createElement('input')
+  input.type = 'file'
+  input.accept = 'image/*'
+  input.addEventListener('change', (e) => {
+    const file = e.target.files[0]
+    if (!file) return
+    const reader = new FileReader()
+    reader.onload = (event) => {
+      const base64 = event.target.result
+      currentImage.value = base64
+      recognizeFood(base64, true)
+    }
+    reader.readAsDataURL(file)
+  })
+  input.click()
+  // #endif
+
+  // #ifndef H5
   uni.chooseImage({
     count: 1,
     sourceType: ['album'],
@@ -400,6 +443,7 @@ const chooseFromAlbum = () => {
       uni.showToast({ title: '选择图片失败', icon: 'none' })
     }
   })
+  // #endif
 }
 
 // 图片裁剪
@@ -446,12 +490,12 @@ const chooseImage = () => {
 }
 
 // ========== 修改点：AI识别食物（添加了 userId） ==========
-const recognizeFood = async (imagePath) => {
+const recognizeFood = async (imagePathOrBase64, isBase64 = false) => {
   isLoading.value = true
   
   try {
     uni.showLoading({ title: '处理图片中...', mask: true })
-    const base64Image = await imageToBase64(imagePath)
+    const base64Image = isBase64 ? imagePathOrBase64 : await imageToBase64(imagePathOrBase64)
     
     uni.showLoading({ title: 'AI识别中...', mask: true })
     const res = await request({
